@@ -19,8 +19,21 @@ class AutoLEAN:
         self.model = "gemini-2.5-pro"
         self.solution_file = "solutionProcess.lean"
         self.error_file = "all_messages.txt"
+        self.error_log_file = "error_log.txt"
         self.solutions_csv = "leanSolutions.csv"
         self.max_refinement_loops = max_refinement_loops
+        self._init_error_log()
+
+    def _init_error_log(self):
+        """Initialize the error log file with a header."""
+        try:
+            with open(self.error_log_file, 'w', encoding='utf-8') as log_file:
+                log_file.write("AutoLEAN Error Log\n")
+                log_file.write("=" * 60 + "\n")
+                log_file.write(f"Started at: {time.strftime('%Y-%m-%d %H:%M:%S')}\n")
+                log_file.write("=" * 60 + "\n\n")
+        except Exception as e:
+            print(f"Warning: Could not initialize error log file: {e}")
 
     def load_problems(self, csv_file: str) -> List[Dict[str, str]]:
         """Load problems and solutions from CSV file."""
@@ -35,17 +48,24 @@ class AutoLEAN:
                 })
         return problems
 
-    def call_gemini(self, prompt: str) -> str:
-        """Call Gemini API with the given prompt."""
-        try:
-            response = self.client.models.generate_content(
-                model=self.model,
-                contents=prompt
-            )
-            return response.text
-        except Exception as e:
-            print(f"Error calling Gemini API: {e}")
-            return ""
+    def call_gemini(self, prompt: str, max_retries: int = 3) -> str:
+        """Call Gemini API with the given prompt and retry on errors."""
+        for attempt in range(max_retries):
+            try:
+                response = self.client.models.generate_content(
+                    model=self.model,
+                    contents=prompt
+                )
+                return response.text
+            except Exception as e:
+                print(f"Error calling Gemini API (attempt {attempt + 1}/{max_retries}): {e}")
+                if attempt < max_retries - 1:
+                    print("Retrying in 2 seconds...")
+                    time.sleep(2)
+                else:
+                    print("All retry attempts failed. Please check your API key and connection.")
+                    return ""
+        return ""
 
     def divide_solution_into_parts(self, problem: str, solution: str) -> Tuple[int, str]:
         """Step 1: Divide the solution into parts using Gemini."""
@@ -72,6 +92,11 @@ PART 2: [description]
         print(response)
         print("=" * 50)
 
+        # Check if we got a valid response
+        if not response or not response.strip():
+            print("❌ Gemini API returned empty response for solution division")
+            return 0, ""
+
         # Parse the response to extract number of parts and descriptions
         lines = response.split('\n')
         num_parts = 0
@@ -89,6 +114,11 @@ PART 2: [description]
 
         if num_parts == 0:
             num_parts = len(part_descriptions) if part_descriptions else 3
+
+        # Validate that we have meaningful part descriptions
+        if not part_descriptions or all(not desc.strip() for desc in part_descriptions):
+            print("❌ No valid part descriptions found in Gemini response")
+            return 0, ""
 
         return num_parts, '\n'.join(part_descriptions)
 
@@ -128,6 +158,11 @@ Please provide complete, runnable Lean4 code that can be executed. Include all n
         print(f"=== GENERATING LEAN4 CODE FOR PART {current_part} ===")
         print(response)
         print("=" * 50)
+
+        # Check if we got a valid response
+        if not response or not response.strip():
+            print(f"❌ Gemini API returned empty response for Part {current_part}")
+            return ""
 
         # Extract Lean4 code from the response
         # Look for code blocks or specific markers
@@ -178,12 +213,37 @@ Please provide complete, runnable Lean4 code that can be executed. Include all n
             with open(self.error_file, 'w', encoding='utf-8') as file:
                 file.write(combined_output)
 
+            # Log errors to error_log.txt if there are any
+            if result.stderr and "error" in result.stderr.lower():
+                with open(self.error_log_file, 'a', encoding='utf-8') as log_file:
+                    log_file.write(f"\n{'='*60}\n")
+                    log_file.write(f"Timestamp: {time.strftime('%Y-%m-%d %H:%M:%S')}\n")
+                    log_file.write(f"File: {self.solution_file}\n")
+                    log_file.write(f"Error Output:\n{result.stderr}\n")
+                    log_file.write(f"{'='*60}\n")
+
             # Return combined output for downstream error detection
             return combined_output
         except subprocess.TimeoutExpired:
-            return "Timeout: Lean4 execution took too long"
+            timeout_msg = "Timeout: Lean4 execution took too long"
+            # Log timeout to error log
+            with open(self.error_log_file, 'a', encoding='utf-8') as log_file:
+                log_file.write(f"\n{'='*60}\n")
+                log_file.write(f"Timestamp: {time.strftime('%Y-%m-%d %H:%M:%S')}\n")
+                log_file.write(f"File: {self.solution_file}\n")
+                log_file.write(f"Error: {timeout_msg}\n")
+                log_file.write(f"{'='*60}\n")
+            return timeout_msg
         except Exception as e:
-            return f"Error running Lean4: {e}"
+            error_msg = f"Error running Lean4: {e}"
+            # Log error to error log
+            with open(self.error_log_file, 'a', encoding='utf-8') as log_file:
+                log_file.write(f"\n{'='*60}\n")
+                log_file.write(f"Timestamp: {time.strftime('%Y-%m-%d %H:%M:%S')}\n")
+                log_file.write(f"File: {self.solution_file}\n")
+                log_file.write(f"Error: {error_msg}\n")
+                log_file.write(f"{'='*60}\n")
+            return error_msg
 
     def refine_complete_code(self, solution: str, current_code: str, error_message: str) -> str:
         """Refine the complete code based on error messages."""
@@ -203,6 +263,11 @@ Please refine your code according to the error message. Provide complete, correc
         print("=== REFINING COMPLETE CODE ===")
         print(response)
         print("=" * 50)
+
+        # Check if we got a valid response
+        if not response or not response.strip():
+            print("❌ Gemini API returned empty response for code refinement")
+            return ""
 
         # Extract Lean4 code from the response
         if "```lean" in response:
@@ -229,6 +294,9 @@ Please refine your code according to the error message. Provide complete, correc
 
         # Step 1: Divide solution into parts
         num_parts, part_descriptions = self.divide_solution_into_parts(problem, solution)
+        if not part_descriptions:
+            print("❌ Failed to divide solution into parts. Skipping this problem.")
+            return False
         print(f"Solution divided into {num_parts} parts")
 
         # Step 2: Generate code for each part
@@ -236,41 +304,76 @@ Please refine your code according to the error message. Provide complete, correc
         for part_num in range(1, num_parts + 1):
             print(f"\n--- Processing Part {part_num}/{num_parts} ---")
 
-            # Generate code for this part
-            new_code = self.generate_lean_code_for_part(
-                solution, num_parts, part_descriptions, part_num,
-                current_code, ""
-            )
+            # Keep trying to generate code for this part until successful or max retries reached
+            max_part_retries = 3
+            part_success = False
 
-            # Combine with previous code
-            if current_code:
-                current_code = new_code  # The new code should already include previous parts
-            else:
-                current_code = new_code
+            for part_attempt in range(max_part_retries):
+                if part_attempt > 0:
+                    print(f"Retrying Part {part_num} (attempt {part_attempt + 1}/{max_part_retries})...")
 
-            # Save and run the code
-            self.save_lean_code(current_code)
-            print(f"Running Lean4 code for Part {part_num}...")
-            error_message = self.run_lean_code()
+                # Generate code for this part
+                new_code = self.generate_lean_code_for_part(
+                    solution, num_parts, part_descriptions, part_num,
+                    current_code, ""
+                )
 
-            if error_message and "error" in error_message.lower():
-                print(f"Error in Part {part_num}: {error_message}")
+                # Check if we got valid code from Gemini
+                if new_code and new_code.strip():
+                    # Combine with previous code
+                    if current_code:
+                        current_code = new_code  # The new code should already include previous parts
+                    else:
+                        current_code = new_code
 
-                # If this is not the last part, continue to next part
-                if part_num < num_parts:
-                    continue
+                    # Save and run the code
+                    self.save_lean_code(current_code)
+                    print(f"Running Lean4 code for Part {part_num}...")
+                    error_message = self.run_lean_code()
+
+                    if error_message and "error" in error_message.lower():
+                        print(f"Error in Part {part_num}: {error_message}")
+
+                        # If this is not the last part, continue to next part
+                        if part_num < num_parts:
+                            part_success = True  # Mark as successful even with errors for non-final parts
+                            break
+                        else:
+                            # For the last part, try to refine the complete code
+                            print("Attempting to refine the complete code...")
+                            refined_code = self.refine_complete_code(solution, current_code, error_message)
+                            if refined_code and refined_code != current_code:
+                                current_code = refined_code
+                                self.save_lean_code(current_code)
+                                error_message = self.run_lean_code()
+                                part_success = True
+                                break
+                            else:
+                                print("Refinement failed or no changes made.")
+                                if part_attempt < max_part_retries - 1:
+                                    continue  # Try again
+                                else:
+                                    print(f"Failed to generate valid code for Part {part_num} after {max_part_retries} attempts.")
+                                    break
+                    else:
+                        print(f"Part {part_num} completed successfully!")
+                        part_success = True
+                        break
                 else:
-                    # For the last part, try to refine the complete code
-                    print("Attempting to refine the complete code...")
-                    refined_code = self.refine_complete_code(solution, current_code, error_message)
-                    if refined_code != current_code:
-                        current_code = refined_code
-                        self.save_lean_code(current_code)
-                        error_message = self.run_lean_code()
-            else:
-                print(f"Part {part_num} completed successfully!")
+                    print(f"Gemini API returned empty code for Part {part_num}")
+                    if part_attempt < max_part_retries - 1:
+                        print("Retrying...")
+                        time.sleep(2)
+                        continue
+                    else:
+                        print(f"Failed to get valid code for Part {part_num} after {max_part_retries} attempts.")
+                        break
 
-                # Step 3: Final refinement loop
+            if not part_success:
+                print(f"❌ Failed to process Part {part_num}. Stopping processing for this problem.")
+                return False
+
+        # Step 3: Final refinement loop
         refinement_count = 0
 
         while refinement_count < self.max_refinement_loops:
@@ -289,7 +392,7 @@ Please refine your code according to the error message. Provide complete, correc
             print(f"Error: {error_message}")
 
             refined_code = self.refine_complete_code(solution, current_code, error_message)
-            if refined_code == current_code:
+            if not refined_code or refined_code == current_code:
                 print("No changes made in refinement, stopping.")
                 break
 
