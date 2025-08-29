@@ -44,6 +44,58 @@ AutoLEAN is an intelligent system that automatically generates Lean4 code from m
 
    **Option B: Direct input when running the program**
 
+## Running in Google Colab
+
+If you want to run the project in Google Colab, follow these steps:
+
+### Step 1: Clone the Repository
+```python
+!git clone https://github.com/ziye2chen/AutoLEAN.git
+```
+
+### Step 2: Install Lean4 and Lake
+```python
+# Run the elan (Lean version manager) installer non-interactively
+!curl https://raw.githubusercontent.com/leanprover/elan/master/elan-init.sh -sSf | sh -s -- -y
+```
+
+### Step 3: Set Environment Variables
+```python
+import os
+os.environ['PATH'] = f"/root/.elan/bin:{os.environ['PATH']}"
+```
+
+### Step 4: Verify Installation
+```python
+# Check the versions to confirm the installation worked
+!lean --version
+!lake --version
+```
+
+### Step 5: Navigate to Project Directory and Setup
+```python
+%cd AutoLEAN
+!lake exe cache get
+```
+
+### Step 6: Run AutoLEAN
+```python
+!python auto_lean.py
+```
+
+### Important Notes for Colab Users:
+- **Runtime Type**: Use a GPU runtime for better performance, especially if using Kimina Prover
+- **Session Duration**: Colab sessions have time limits, so long-running processes may be interrupted
+- **File Persistence**: Files created in Colab will be lost when the session ends unless you download them
+- **API Key**: You'll need to input your Gemini API key when prompted, or set it as an environment variable
+- **Dependencies**: The `lake exe cache get` command downloads necessary Lean4 dependencies
+
+### Alternative: Set API Key as Environment Variable in Colab
+```python
+import os
+os.environ['GEMINI_API_KEY'] = 'your_actual_api_key_here'
+```
+
 ## Usage
 
 ### Basic Usage
