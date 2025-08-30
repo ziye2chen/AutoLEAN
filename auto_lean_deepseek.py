@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-AutoLEAN: Automatic Lean4 Code Generation using Gemini API
+AutoLEAN Deepseek: Automatic Lean4 Code Generation using Deepseek v3.1 API
 This program takes problems and solutions from TestExample.csv and generates Lean4 code step by step.
 """
 
@@ -9,14 +9,17 @@ import os
 import subprocess
 import time
 from typing import List, Dict, Tuple
-from google import genai
+from openai import OpenAI
 import json
 
-class AutoLEAN:
+class AutoLEANDeepseek:
     def __init__(self, api_key: str, max_refinement_loops: int = 10):
-        """Initialize the AutoLEAN system with Gemini API key."""
-        self.client = genai.Client(api_key=api_key)
-        self.model = "gemini-2.5-pro"
+        """Initialize the AutoLEAN system with Deepseek API key."""
+        self.client = OpenAI(
+            api_key=api_key,
+            base_url="https://dashscope.aliyuncs.com/compatible-mode/v1"
+        )
+        self.model = "deepseek-v3.1"
         self.solution_file = "solutionProcess.lean"
         self.error_file = "all_messages.txt"
         self.error_log_file = "error_log.txt"
@@ -28,7 +31,7 @@ class AutoLEAN:
         """Initialize the error log file with a header."""
         try:
             with open(self.error_log_file, 'w', encoding='utf-8') as log_file:
-                log_file.write("AutoLEAN Error Log\n")
+                log_file.write("AutoLEAN Deepseek Error Log\n")
                 log_file.write("=" * 60 + "\n")
                 log_file.write(f"Started at: {time.strftime('%Y-%m-%d %H:%M:%S')}\n")
                 log_file.write("=" * 60 + "\n\n")
@@ -48,17 +51,32 @@ class AutoLEAN:
                 })
         return problems
 
-    def call_gemini(self, prompt: str, max_retries: int = 3) -> str:
-        """Call Gemini API with the given prompt and retry on errors."""
+    def call_deepseek(self, prompt: str, max_retries: int = 3) -> str:
+        """Call Deepseek API with the given prompt and retry on errors."""
         for attempt in range(max_retries):
             try:
-                response = self.client.models.generate_content(
+                completion = self.client.chat.completions.create(
                     model=self.model,
-                    contents=prompt
+                    messages=[
+                        {'role': 'user', 'content': prompt}
+                    ]
                 )
-                return response.text
+
+                # Get the response content
+                response = completion.choices[0].message.content
+
+                # Check if there's reasoning content (optional)
+                if hasattr(completion.choices[0].message, 'reasoning_content'):
+                    reasoning = completion.choices[0].message.reasoning_content
+                    if reasoning:
+                        print("🤔 Deepseek Reasoning:")
+                        print(reasoning)
+                        print("💡 Final Response:")
+
+                return response
+
             except Exception as e:
-                print(f"Error calling Gemini API (attempt {attempt + 1}/{max_retries}): {e}")
+                print(f"Error calling Deepseek API (attempt {attempt + 1}/{max_retries}): {e}")
                 if attempt < max_retries - 1:
                     print("Retrying in 2 seconds...")
                     time.sleep(2)
@@ -68,7 +86,7 @@ class AutoLEAN:
         return ""
 
     def divide_solution_into_parts(self, problem: str, solution: str) -> Tuple[int, str]:
-        """Step 1: Divide the solution into parts using Gemini."""
+        """Step 1: Divide the solution into parts using Deepseek."""
         prompt = f"""I have a proof problem:
 {problem}
 
@@ -87,14 +105,14 @@ PART 2: [description]
 ...
 """
 
-        response = self.call_gemini(prompt)
+        response = self.call_deepseek(prompt)
         print("=== DIVIDING SOLUTION INTO PARTS ===")
         print(response)
         print("=" * 50)
 
         # Check if we got a valid response
         if not response or not response.strip():
-            print("❌ Gemini API returned empty response for solution division")
+            print("❌ Deepseek API returned empty response for solution division")
             return 0, ""
 
         # Parse the response to extract number of parts and descriptions
@@ -117,7 +135,7 @@ PART 2: [description]
 
         # Validate that we have meaningful part descriptions
         if not part_descriptions or all(not desc.strip() for desc in part_descriptions):
-            print("❌ No valid part descriptions found in Gemini response")
+            print("❌ No valid part descriptions found in Deepseek response")
             return 0, ""
 
         return num_parts, '\n'.join(part_descriptions)
@@ -157,14 +175,14 @@ And combine the code together with the previous parts.
 Please provide complete, runnable Lean4 code that can be executed. Include all necessary imports and structure.
 """
 
-        response = self.call_gemini(prompt)
+        response = self.call_deepseek(prompt)
         print(f"=== GENERATING LEAN4 CODE FOR PART {current_part} ===")
         print(response)
         print("=" * 50)
 
         # Check if we got a valid response
         if not response or not response.strip():
-            print(f"❌ Gemini API returned empty response for Part {current_part}")
+            print(f"❌ Deepseek API returned empty response for Part {current_part}")
             return ""
 
         # Extract Lean4 code from the response and clean it up
@@ -244,7 +262,7 @@ Please provide complete, runnable Lean4 code that can be executed. Include all n
     def run_lean_code(self) -> str:
         """Run the Lean4 code and capture error messages."""
         try:
-            # Run the Lean4 code using lake (equivalent to: lake env lean ./solutionProcess.lean > ./all_messages.txt 2>&1)
+            # Run the Lean4 code using lake
             result = subprocess.run(
                 ["lake", "env", "lean", self.solution_file],
                 capture_output=True,
@@ -305,14 +323,14 @@ When I run the code I got such error:
 Please refine your code according to the error message. Provide complete, corrected Lean4 code.
 """
 
-        response = self.call_gemini(prompt)
+        response = self.call_deepseek(prompt)
         print("=== REFINING COMPLETE CODE ===")
         print(response)
         print("=" * 50)
 
         # Check if we got a valid response
         if not response or not response.strip():
-            print("❌ Gemini API returned empty response for code refinement")
+            print("❌ Deepseek API returned empty response for code refinement")
             return ""
 
         # Extract and clean the Lean4 code from the response
@@ -354,7 +372,7 @@ Please refine your code according to the error message. Provide complete, correc
                     current_code, ""
                 )
 
-                # Check if we got valid code from Gemini
+                # Check if we got valid code from Deepseek
                 if new_code and new_code.strip():
                     # Combine with previous code
                     if current_code:
@@ -396,7 +414,7 @@ Please refine your code according to the error message. Provide complete, correc
                         part_success = True
                         break
                 else:
-                    print(f"Gemini API returned empty code for Part {part_num}")
+                    print(f"Deepseek API returned empty code for Part {part_num}")
                     if part_attempt < max_part_retries - 1:
                         print("Retrying...")
                         time.sleep(2)
@@ -449,8 +467,8 @@ Please refine your code according to the error message. Provide complete, correc
         print(f"Maximum refinement loops set to: {max_loops}")
 
     def run(self, csv_file: str = "TestExample.csv"):
-        """Run the complete AutoLEAN pipeline."""
-        print("🚀 Starting AutoLEAN Pipeline")
+        """Run the complete AutoLEAN Deepseek pipeline."""
+        print("🚀 Starting AutoLEAN Deepseek Pipeline")
         print("=" * 60)
 
         # Load problems
@@ -476,21 +494,21 @@ Please refine your code according to the error message. Provide complete, correc
                 print(f"❌ Error processing problem {problem_data['id']}: {e}")
                 continue
 
-        print("\n🎉 AutoLEAN Pipeline completed!")
+        print("\n🎉 AutoLEAN Deepseek Pipeline completed!")
 
 def main():
-    """Main function to run AutoLEAN."""
+    """Main function to run AutoLEAN Deepseek."""
     # Get API key from environment variable or user input
-    api_key = os.getenv("GEMINI_API_KEY")
+    api_key = os.getenv("DASHSCOPE_API_KEY")
     if not api_key:
-        api_key = input("Please enter your Gemini API key: ").strip()
+        api_key = input("Please enter your Deepseek API key: ").strip()
 
     if not api_key:
         print("❌ No API key provided. Exiting.")
         return
 
-    # Initialize and run AutoLEAN
-    auto_lean = AutoLEAN(api_key, max_refinement_loops=20)  # Customize max refinement loops
+    # Initialize and run AutoLEAN Deepseek
+    auto_lean = AutoLEANDeepseek(api_key, max_refinement_loops=20)  # Customize max refinement loops
     auto_lean.run()
 
 if __name__ == "__main__":

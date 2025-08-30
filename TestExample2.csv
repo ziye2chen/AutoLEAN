@@ -1,0 +1,60 @@
+problem_id,problem,solution
+2023a3,"Let $x_{1}, x_{2}, \ldots, x_{2023}$ be distinct real positive numbers such that
+
+$$
+a_{n}=\sqrt{\left(x_{1}+x_{2}+\cdots+x_{n}\right)\left(\frac{1}{x_{1}}+\frac{1}{x_{2}}+\cdots+\frac{1}{x_{n}}\right)}
+$$
+
+is an integer for every $n=1,2, \ldots, 2023$. Prove that $a_{2023} \geqslant 3034$.","We start with some basic observations. First note that the sequence $a_{1}, a_{2}, \ldots, a_{2023}$ is increasing and thus, since all elements are integers, $a_{n+1}-a_{n} \geqslant 1$. We also observe that $a_{1}=1$ and
+
+$$
+a_{2}=\sqrt{\left(x_{1}+x_{2}\right)\left(\frac{1}{x_{1}}+\frac{1}{x_{2}}\right)}>2
+$$
+
+by Cauchy-Schwarz inequality and using $x_{1} \neq x_{2}$. So, $a_{2} \geqslant 3$.\\
+Now, we proceed to the main part of the argument. We observe that 3034 is about three halves of 2023. Motivated by this observation, we will prove the following.\\
+Claim. If $a_{n+1}-a_{n}=1$, then $a_{n+2}-a_{n+1} \geqslant 2$.\\
+In other words, the sequence has to increase by at least 2 at least half of the times. Assuming the claim is true, since $a_{1}=1$, we would be done since
+
+$$
+\begin{aligned}
+a_{2023} & =\left(a_{2023}-a_{2022}\right)+\left(a_{2022}-a_{2021}\right)+\cdots+\left(a_{2}-a_{1}\right)+a_{1} \\
+& \geqslant(2+1) \cdot 1011+1 \\
+& =3034
+\end{aligned}
+$$
+
+We now prove the claim. We start by observing that
+
+$$
+\begin{aligned}
+a_{n+1}^{2}= & \left(x_{1}+\cdots+x_{n+1}\right)\left(\frac{1}{x_{1}}+\cdots+\frac{1}{x_{n+1}}\right) \\
+= & \left(x_{1}+\cdots+x_{n}\right)\left(\frac{1}{x_{1}}+\cdots+\frac{1}{x_{n}}\right)+1 \\
+& \quad+\frac{1}{x_{n+1}}\left(x_{1}+\cdots+x_{n}\right)+x_{n+1}\left(\frac{1}{x_{1}}+\cdots+\frac{1}{x_{n}}\right) \\
+\geqslant & a_{n}^{2}+1+2 \sqrt{\frac{1}{x_{n+1}}\left(x_{1}+\cdots+x_{n}\right) \cdot x_{n+1}\left(\frac{1}{x_{1}}+\cdots+\frac{1}{x_{n}}\right)} \\
+= & a_{n}^{2}+1+2 a_{n} \\
+= & \left(a_{n}+1\right)^{2}
+\end{aligned}
+$$
+
+where we used AM-GM to obtain the inequality. In particular, if $a_{n+1}=a_{n}+1$, then
+
+
+\begin{equation*}
+\frac{1}{x_{n+1}}\left(x_{1}+\cdots+x_{n}\right)=x_{n+1}\left(\frac{1}{x_{1}}+\cdots+\frac{1}{x_{n}}\right) . \tag{1}
+\end{equation*}
+
+
+Now, assume for the sake of contradiction that both $a_{n+1}=a_{n}+1$ and $a_{n+2}=a_{n+1}+1$ hold. In this case, (1) gives
+
+$$
+\frac{1}{x_{n+2}}\left(x_{1}+\cdots+x_{n+1}\right)=x_{n+2}\left(\frac{1}{x_{1}}+\cdots+\frac{1}{x_{n+1}}\right) .
+$$
+
+We can rewrite this relation as
+
+$$
+\frac{x_{n+1}}{x_{n+2}}\left(\frac{1}{x_{n+1}}\left(x_{1}+\cdots+x_{n}\right)+1\right)=\frac{x_{n+2}}{x_{n+1}}\left(x_{n+1}\left(\frac{1}{x_{1}}+\cdots+\frac{1}{x_{n}}\right)+1\right)
+$$
+
+From (1) again, we conclude that $x_{n+1}=x_{n+2}$ which is a contradiction."

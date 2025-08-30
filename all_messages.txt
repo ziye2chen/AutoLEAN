@@ -1,0 +1,1 @@
+./myTEST2.lean:2:0: error: object file '/Users/zie/Documents/GitHub/AutoLEAN/.lake/build/lib/lean/Mathlib/Algebra/BigOperators/Group/Finset.olean' of module Mathlib.Algebra.BigOperators.Group.Finset does not exist
