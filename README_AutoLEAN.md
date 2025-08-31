@@ -16,6 +16,7 @@ AutoLEAN is an intelligent system that automatically generates Lean4 code from m
 1. **Python 3.8+** installed on your system
 2. **Lean4** and **Lake** build system installed
 3. **Google Gemini API Key** - Get one from [Google AI Studio](https://makersuite.google.com/app/apikey)
+4. **OpenRouter API Key** - Get one from [OpenRouter](https://openrouter.ai/) for DeepSeek Prover v2 access
 
 ## Installation
 
@@ -31,18 +32,20 @@ AutoLEAN is an intelligent system that automatically generates Lean4 code from m
 
    For Kimina Prover with vLLM, ensure a compatible CUDA + GPUs setup. On Windows, vLLM is not officially supported; use WSL/Linux.
 
-3. **Set up your Gemini API key** (choose one method):
+3. **Set up your API keys** (choose one method):
 
-   **Option A: Environment Variable (Recommended)**
-   ```bash
-   # On Windows
-   set GEMINI_API_KEY=your_api_key_here
+    **Option A: Environment Variables (Recommended)**
+    ```bash
+    # On Windows
+    set GEMINI_API_KEY=your_gemini_api_key_here
+    set OPENROUTER_API_KEY=your_openrouter_api_key_here
 
-   # On Linux/Mac
-   export GEMINI_API_KEY=your_api_key_here
-   ```
+    # On Linux/Mac
+    export GEMINI_API_KEY=your_gemini_api_key_here
+    export OPENROUTER_API_KEY=your_openrouter_api_key_here
+    ```
 
-   **Option B: Direct input when running the program**
+    **Option B: Direct input when running the program**
 
 ## Running in Google Colab
 
@@ -90,10 +93,11 @@ os.environ['PATH'] = f"/root/.elan/bin:{os.environ['PATH']}"
 - **API Key**: You'll need to input your Gemini API key when prompted, or set it as an environment variable
 - **Dependencies**: The `lake exe cache get` command downloads necessary Lean4 dependencies
 
-### Alternative: Set API Key as Environment Variable in Colab
+### Alternative: Set API Keys as Environment Variables in Colab
 ```python
 import os
-os.environ['GEMINI_API_KEY'] = 'your_actual_api_key_here'
+os.environ['GEMINI_API_KEY'] = 'your_actual_gemini_api_key_here'
+os.environ['OPENROUTER_API_KEY'] = 'your_actual_openrouter_api_key_here'
 ```
 
 ## Usage
@@ -164,11 +168,12 @@ problem_id,lean_code
 
 ### Pipeline Overview
 
-1. **Solution Division**: Uses Gemini to break down the mathematical solution into logical parts
-2. **Incremental Code Generation**: Generates Lean4 code for each part sequentially
-3. **Error Detection**: Runs the Lean4 code and captures any compilation errors
-4. **Iterative Refinement**: Uses Gemini to fix errors and improve the code
-5. **Final Validation**: Ensures the complete code compiles successfully
+1. **Solution Division**: Uses Gemini 2.5 Pro to break down the mathematical solution into logical parts
+2. **Library Dependency Resolution**: Uses Gemini 2.5 Pro to identify and validate required Mathlib4 imports
+3. **Incremental Code Generation**: Uses DeepSeek Prover v2 to generate Lean4 code for each part sequentially
+4. **Error Detection**: Runs the Lean4 code and captures any compilation errors
+5. **Iterative Refinement**: Uses DeepSeek Prover v2 to fix errors and improve the code
+6. **Final Validation**: Ensures the complete code compiles successfully
 
 ### Detailed Process
 
@@ -178,24 +183,31 @@ Input: Problem + Solution
 Output: Number of parts + Part descriptions
 ```
 
-#### Step 2: Part-by-Part Code Generation
-For each part:
+#### Step 2: Library Dependency Resolution
 ```
-Input: Part description + Previous code + Error messages
-Output: Lean4 code for current part
+Input: Solution + Part descriptions + Mathlib4 structure
+Output: Validated import statements
 ```
 
-#### Step 3: Code Refinement
+#### Step 3: Part-by-Part Code Generation
+For each part:
 ```
-Input: Complete code + Error messages
-Output: Refined and corrected Lean4 code
+Input: Part description + Previous code + Error messages + Library imports
+Output: Lean4 code for current part (using DeepSeek Prover v2)
+```
+
+#### Step 4: Code Refinement
+```
+Input: Complete code + Error messages + Library imports
+Output: Refined and corrected Lean4 code (using DeepSeek Prover v2)
 ```
 
 ## Configuration
 
 ### API Settings
 
-- **Model**: Uses `gemini-2.5-pro` by default (better reasoning capabilities)
+- **Gemini Model**: Uses `gemini-2.5-pro` by default (better reasoning capabilities)
+- **DeepSeek Model**: Uses `deepseek/deepseek-prover-v2` via OpenRouter
 - **Rate Limiting**: Includes 5-second delays between problems
 - **Timeout**: 60 seconds for Lean4 execution
 
@@ -211,6 +223,7 @@ Output: Refined and corrected Lean4 code
 
 1. **API Key Errors**
    - Ensure your Gemini API key is valid and has sufficient quota
+   - Ensure your OpenRouter API key is valid for DeepSeek Prover v2 access
    - Check environment variable settings
 
 2. **Lean4 Compilation Errors**
@@ -246,13 +259,24 @@ PART 3: Proof of the claim
 PART 4: Final contradiction and conclusion
 ==================================================
 
+--- Resolving Library Dependencies ---
+=== RESOLVING LIBRARY DEPENDENCIES ===
+[Gemini response with import statements]
+==================================================
+✅ Library imports validated successfully!
+
 --- Processing Part 1/4 ---
-=== GENERATING LEAN4 CODE FOR PART 1 ===
-[Gemini response with Lean4 code]
+=== GENERATING LEAN4 CODE FOR PART 1 (DeepSeek Prover v2) ===
+[DeepSeek Prover v2 response with Lean4 code]
 ==================================================
 Saved Lean4 code to solutionProcess.lean
 Running Lean4 code for Part 1...
 Part 1 completed successfully!
+
+--- Refinement Round 1 ---
+=== REFINING COMPLETE CODE (DeepSeek Prover v2) ===
+[DeepSeek Prover v2 response with refined Lean4 code]
+==================================================
 
 ✅ Problem 2023a3 processed successfully
 ```
