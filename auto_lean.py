@@ -131,7 +131,7 @@ And its solution with latex:
 Do not change the solution. Please divide the solution into some parts, according to its process.
 Please respond with:
 1. The number of parts
-2. A clear description of each part with the latex proof process in original solution
+2. A clear description of each part (you can add some equations from the original solution if needed)
 
 Format your response as:
 PARTS: [number]
@@ -296,21 +296,18 @@ The required library imports are:
 Now, I want to use Lean4 code to represent the process. Let's translate the process into Lean4 code step by step.
 Firstly, transfer the process Part 1 into correct and runnable Lean4 code.
 
-IMPORTANT: You must use ONLY the provided library imports above. Do not add or change any import statements.
+IMPORTANT: Try to use the provided library imports above.
 
 Please provide complete, runnable Lean4 code that can be executed. Include the exact import statements provided above.
 """
         else:
-            prompt = f"""The code until part {current_part - 1} is:
-{existing_code}
-
-When I run the code, I got such error:
+            prompt = f"""When I run the Lean4 code you generated, I got such error:
 {error_message}
 
 Please solve the error so far. Next, transfer the process Part {current_part} into correct and runnable Lean4 code.
 And combine the code together with the previous parts.
 
-IMPORTANT: You must use ONLY the provided library imports above. Do not add or change any import statements.
+IMPORTANT: Try to use the provided library imports above.
 
 Please provide complete, runnable Lean4 code that can be executed. Include the exact import statements provided above.
 """
