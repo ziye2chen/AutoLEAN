@@ -10,28 +10,21 @@ import subprocess
 import time
 from typing import List, Dict, Tuple
 from google import genai
-from openai import OpenAI
 import json
 
 class AutoLEAN:
-    def __init__(self, gemini_api_key: str, openrouter_api_key: str = None, max_refinement_loops: int = 10):
-        """Initialize the AutoLEAN system with API keys."""
+    def __init__(self, gemini_api_key: str, model: str = "gemini-2.5-pro", max_refinement_loops: int = 10):
+        """Initialize the AutoLEAN system with Gemini API key and model selection."""
         self.gemini_client = genai.Client(api_key=gemini_api_key)
-        self.gemini_model = "gemini-2.5-pro"
+        self.gemini_model = model
         self.solution_file = "solutionProcess.lean"
         self.error_file = "all_messages.txt"
         self.error_log_file = "error_log.txt"
         self.solutions_csv = "leanSolutions.csv"
         self.max_refinement_loops = max_refinement_loops
 
-        # Initialize OpenRouter client for DeepSeek Prover v2
-        if openrouter_api_key:
-            self.openrouter_client = OpenAI(
-                base_url="https://openrouter.ai/api/v1",
-                api_key=openrouter_api_key,
-            )
-        else:
-            self.openrouter_client = None
+        # Initialize chat session (will be created for each problem)
+        self.current_chat = None
 
         # Load mathlib structure
         self.mathlib_structure = self.load_mathlib_structure()
@@ -73,15 +66,48 @@ class AutoLEAN:
                 })
         return problems
 
+    def create_new_chat(self):
+        """Create a new chat session for a new problem."""
+        self.current_chat = self.gemini_client.chats.create(model=self.gemini_model)
+        print(f"🆕 Created new chat session with {self.gemini_model}")
+
+    def send_chat_message(self, message: str) -> str:
+        """Send a message to the current chat session and return the response."""
+        if not self.current_chat:
+            self.create_new_chat()
+
+        try:
+            response = self.current_chat.send_message(message)
+            return response.text
+        except Exception as e:
+            print(f"Error sending chat message: {e}")
+            return ""
+
+    def get_chat_history(self) -> list:
+        """Get the chat history for debugging purposes."""
+        if not self.current_chat:
+            return []
+
+        try:
+            history = []
+            for message in self.current_chat.get_history():
+                role = message.role
+                text = message.parts[0].text if message.parts else ""
+                history.append({"role": role, "text": text})
+            return history
+        except Exception as e:
+            print(f"Error getting chat history: {e}")
+            return []
+
     def call_gemini(self, prompt: str, max_retries: int = 3) -> str:
-        """Call Gemini API with the given prompt and retry on errors."""
+        """Call Gemini API using multi-turn chat and retry on errors."""
         for attempt in range(max_retries):
             try:
-                response = self.gemini_client.models.generate_content(
-                    model=self.gemini_model,
-                    contents=prompt
-                )
-                return response.text
+                response = self.send_chat_message(prompt)
+                if response:
+                    return response
+                else:
+                    raise Exception("Empty response from chat")
             except Exception as e:
                 print(f"Error calling Gemini API (attempt {attempt + 1}/{max_retries}): {e}")
                 if attempt < max_retries - 1:
@@ -92,26 +118,7 @@ class AutoLEAN:
                     return ""
         return ""
 
-    def call_deepseek_prover(self, prompt: str) -> str:
-        """Call DeepSeek Prover v2 via OpenRouter API."""
-        if not self.openrouter_client:
-            print("Error: OpenRouter API key not provided. Cannot use DeepSeek Prover v2.")
-            return ""
 
-        try:
-            completion = self.openrouter_client.chat.completions.create(
-                model="deepseek/deepseek-prover-v2",
-                messages=[
-                    {
-                        "role": "user",
-                        "content": prompt
-                    }
-                ]
-            )
-            return completion.choices[0].message.content
-        except Exception as e:
-            print(f"Error calling DeepSeek Prover v2: {e}")
-            return ""
 
     def divide_solution_into_parts(self, problem: str, solution: str) -> Tuple[int, str]:
         """Step 1: Divide the solution into parts using Gemini."""
@@ -124,7 +131,7 @@ And its solution with latex:
 Do not change the solution. Please divide the solution into some parts, according to its process.
 Please respond with:
 1. The number of parts
-2. A clear description of each part
+2. A clear description of each part with the latex proof process in original solution
 
 Format your response as:
 PARTS: [number]
@@ -170,16 +177,16 @@ PART 2: [description]
 
     def resolve_library_dependencies(self, solution: str, num_parts: int, part_descriptions: str) -> str:
         """Step 2: Resolve library dependencies using Gemini."""
-        prompt = f"""From the original solution:
-{solution}
-
-We divide the solution into {num_parts} parts:
+        prompt = f"""We divide the originalsolution into {num_parts} parts:
 {part_descriptions}
 
 I now need to convert the solution into LEAN4 code with latest Mathlib4. Please analyze and identify all required libraries. And give the libraries with Lean4 code. The libraries dependence should follow the latest mathlib4 structure below:
 {self.mathlib_structure}
 
-Please provide only the import statements that are needed for this solution. Each import should be on a separate line and follow the exact structure shown above.
+CRITICAL: All import statements MUST start with "import Mathlib." (not just "import ").
+For example, use "import Mathlib.Data.Nat.Basic" not "import Data.Nat.Basic".
+
+Please provide only the import statements that are needed for this solution. Each import should be on a separate line and MUST include the "Mathlib." prefix.
 """
 
         response = self.call_gemini(prompt)
@@ -191,7 +198,13 @@ Please provide only the import statements that are needed for this solution. Eac
         import_lines = []
         for line in response.split('\n'):
             line = line.strip()
-            if line.startswith('import ') and 'Mathlib' in line:
+            if line.startswith('import '):
+                # Fix imports that are missing Mathlib prefix
+                if not line.startswith('import Mathlib.') and not line.startswith('import .'):
+                    # Add Mathlib prefix
+                    module_path = line[7:]  # Remove 'import '
+                    line = f"import Mathlib.{module_path}"
+                    print(f"Fixed import: {line}")
                 import_lines.append(line)
 
         if not import_lines:
@@ -242,7 +255,10 @@ But when I run the Lean4 code, I got this error:
 The mathlib4 structure is:
 {self.mathlib_structure}
 
-Please fix the import statements. Provide only the corrected import statements, one per line, following the exact structure shown above.
+CRITICAL: All import statements MUST start with "import Mathlib." (not just "import ").
+For example, use "import Mathlib.Data.Nat.Basic" not "import Data.Nat.Basic".
+
+Please fix the import statements. Provide only the corrected import statements, one per line, and MUST include the "Mathlib." prefix.
 """
 
         response = self.call_gemini(prompt)
@@ -254,7 +270,13 @@ Please fix the import statements. Provide only the corrected import statements, 
         import_lines = []
         for line in response.split('\n'):
             line = line.strip()
-            if line.startswith('import ') and 'Mathlib' in line:
+            if line.startswith('import '):
+                # Fix imports that are missing Mathlib prefix
+                if not line.startswith('import Mathlib.') and not line.startswith('import .'):
+                    # Add Mathlib prefix
+                    module_path = line[7:]  # Remove 'import '
+                    line = f"import Mathlib.{module_path}"
+                    print(f"Fixed import: {line}")
                 import_lines.append(line)
 
         return '\n'.join(import_lines) if import_lines else current_imports
@@ -263,12 +285,9 @@ Please fix the import statements. Provide only the corrected import statements, 
                                   part_descriptions: str, current_part: int,
                                   existing_code: str = "", error_message: str = "",
                                   library_imports: str = "") -> str:
-        """Generate Lean4 code for a specific part using DeepSeek Prover v2."""
+        """Generate Lean4 code for a specific part using Gemini."""
         if current_part == 1:
-            prompt = f"""From the original solution:
-{solution}
-
-We divide the solution into {num_parts} parts:
+            prompt = f"""Since we divide the original solution into {num_parts} parts:
 {part_descriptions}
 
 The required library imports are:
@@ -282,19 +301,13 @@ IMPORTANT: You must use ONLY the provided library imports above. Do not add or c
 Please provide complete, runnable Lean4 code that can be executed. Include the exact import statements provided above.
 """
         else:
-            prompt = f"""We divide the solution into {num_parts} parts:
-{part_descriptions}
-
-The required library imports are:
-{library_imports}
-
-The code until part {current_part - 1} is:
+            prompt = f"""The code until part {current_part - 1} is:
 {existing_code}
 
 When I run the code, I got such error:
 {error_message}
 
-Please solve it, and transfer the process Part {current_part} into correct and runnable Lean4 code.
+Please solve the error so far. Next, transfer the process Part {current_part} into correct and runnable Lean4 code.
 And combine the code together with the previous parts.
 
 IMPORTANT: You must use ONLY the provided library imports above. Do not add or change any import statements.
@@ -302,14 +315,14 @@ IMPORTANT: You must use ONLY the provided library imports above. Do not add or c
 Please provide complete, runnable Lean4 code that can be executed. Include the exact import statements provided above.
 """
 
-        response = self.call_deepseek_prover(prompt)
-        print(f"=== GENERATING LEAN4 CODE FOR PART {current_part} (DeepSeek Prover v2) ===")
+        response = self.call_gemini(prompt)
+        print(f"=== GENERATING LEAN4 CODE FOR PART {current_part} (Gemini) ===")
         print(response)
         print("=" * 50)
 
         # Check if we got a valid response
         if not response or not response.strip():
-            print(f"❌ DeepSeek Prover v2 returned empty response for Part {current_part}")
+            print(f"❌ Gemini returned empty response for Part {current_part}")
             return ""
 
         # Extract Lean4 code from the response and clean it up
@@ -437,32 +450,29 @@ Please provide complete, runnable Lean4 code that can be executed. Include the e
             return error_msg
 
     def refine_complete_code(self, solution: str, current_code: str, error_message: str, library_imports: str = "") -> str:
-        """Refine the complete code based on error messages using DeepSeek Prover v2."""
+        """Refine the complete code based on error messages using Gemini."""
         prompt = f"""From the original solution:
 {solution}
 
-We got the solution with Lean4 Code:
+We transfer the solution into Lean4 Code:
 {current_code}
-
-The required library imports are:
-{library_imports}
 
 When I run the code I got such error:
 {error_message}
 
-Please refine your code according to the error message. Provide complete, corrected Lean4 code.
+Please refine your code according to the error message. Solve the error and provide complete, corrected Lean4 code.
 
 IMPORTANT: You must use ONLY the provided library imports above. Do not add or change any import statements.
 """
 
-        response = self.call_deepseek_prover(prompt)
-        print("=== REFINING COMPLETE CODE (DeepSeek Prover v2) ===")
+        response = self.call_gemini(prompt)
+        print("=== REFINING COMPLETE CODE (Gemini) ===")
         print(response)
         print("=" * 50)
 
         # Check if we got a valid response
         if not response or not response.strip():
-            print("❌ DeepSeek Prover v2 returned empty response for code refinement")
+            print("❌ Gemini returned empty response for code refinement")
             return ""
 
         # Extract and clean the Lean4 code from the response
@@ -474,6 +484,9 @@ IMPORTANT: You must use ONLY the provided library imports above. Do not add or c
         print(f"\n{'='*60}")
         print(f"PROCESSING PROBLEM: {problem_data['id']}")
         print(f"{'='*60}")
+
+        # Create a new chat session for this problem
+        self.create_new_chat()
 
         problem = problem_data['problem']
         solution = problem_data['solution']
@@ -656,7 +669,7 @@ IMPORTANT: You must use ONLY the provided library imports above. Do not add or c
 
 def main():
     """Main function to run AutoLEAN."""
-    # Get API keys from environment variables or user input
+    # Get API key from environment variable or user input
     gemini_api_key = os.getenv("GEMINI_API_KEY")
     if not gemini_api_key:
         gemini_api_key = input("Please enter your Gemini API key: ").strip()
@@ -665,16 +678,22 @@ def main():
         print("❌ No Gemini API key provided. Exiting.")
         return
 
-    openrouter_api_key = os.getenv("OPENROUTER_API_KEY")
-    if not openrouter_api_key:
-        openrouter_api_key = input("Please enter your OpenRouter API key (for DeepSeek Prover v2): ").strip()
+    # Model selection
+    print("\n🤖 Model Selection:")
+    print("1. Gemini 2.5 Pro (Recommended for complex reasoning)")
+    print("2. Gemini 2.5 Flash (Faster, good for simpler tasks)")
 
-    if not openrouter_api_key:
-        print("⚠️  No OpenRouter API key provided. DeepSeek Prover v2 will not be available.")
-        print("   You can still use the system with Gemini only, but code generation will be limited.")
+    model_choice = input("Select model (1 or 2, default: 1): ").strip()
+
+    if model_choice == "2":
+        model = "gemini-2.5-flash"
+        print("✅ Selected: Gemini 2.5 Flash")
+    else:
+        model = "gemini-2.5-pro"
+        print("✅ Selected: Gemini 2.5 Pro")
 
     # Initialize and run AutoLEAN
-    auto_lean = AutoLEAN(gemini_api_key, openrouter_api_key, max_refinement_loops=20)
+    auto_lean = AutoLEAN(gemini_api_key, model, max_refinement_loops=20)
     auto_lean.run()
 
 if __name__ == "__main__":
