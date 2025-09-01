@@ -177,7 +177,7 @@ PART 2: [description]
 
     def resolve_library_dependencies(self, solution: str, num_parts: int, part_descriptions: str) -> str:
         """Step 2: Resolve library dependencies using Gemini."""
-        prompt = f"""We divide the originalsolution into {num_parts} parts:
+        prompt = f"""We divide the original solution into {num_parts} parts:
 {part_descriptions}
 
 I now need to convert the solution into LEAN4 code with latest Mathlib4. Please analyze and identify all required libraries. And give the libraries with Lean4 code. The libraries dependence should follow the latest mathlib4 structure below:

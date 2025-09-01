@@ -1,1 +1,14 @@
-./myTEST2.lean:2:0: error: object file '/Users/zie/Documents/GitHub/AutoLEAN/.lake/build/lib/lean/Mathlib/Algebra/BigOperators/Group/Finset.olean' of module Mathlib.Algebra.BigOperators.Group.Finset does not exist
+./myTEST2.lean:19:59: error: Function expected at
+  range 1
+but this term has type
+  Finset ℕ
+
+Note: Expected a function because this term is being applied to the argument
+  2024
+./myTEST2.lean:24:59: error: Function expected at
+  range 1
+but this term has type
+  Finset ℕ
+
+Note: Expected a function because this term is being applied to the argument
+  2023
