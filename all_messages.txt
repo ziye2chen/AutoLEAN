@@ -1,14 +1,1 @@
-./myTEST2.lean:19:59: error: Function expected at
-  range 1
-but this term has type
-  Finset ℕ
-
-Note: Expected a function because this term is being applied to the argument
-  2024
-./myTEST2.lean:24:59: error: Function expected at
-  range 1
-but this term has type
-  Finset ℕ
-
-Note: Expected a function because this term is being applied to the argument
-  2023
+./myTEST2.lean:3:0: error: object file 'D:\Github\AutoLEAN\.lake\build\lib\lean\Mathlib\Analysis\SpecialFunctions\Trigonometric\Sum.olean' of module Mathlib.Analysis.SpecialFunctions.Trigonometric.Sum does not exist

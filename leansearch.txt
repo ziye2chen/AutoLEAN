@@ -1,0 +1,3 @@
+Searching for: 'lemma two_sin_pi_div_seven_ne_zero : 2 * sin (¦Ð / 7) ¡Ù 0 := by 
+apply mul_ne_zero two_ne_zero (Real.sin_pos_of_pos_of_lt_pi _ _).ne' <;> 
+linarith lemma sin_pi_mul_neg_div (

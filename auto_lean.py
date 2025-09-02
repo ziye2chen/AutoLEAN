@@ -66,6 +66,116 @@ class AutoLEAN:
                 })
         return problems
 
+    # ===================== Sectioning helpers and CSV writers =====================
+    def write_sections_csv(
+        self,
+        problem_row: Dict[str, str],
+        parts: List[Dict[str, str]],
+        out_path: str = "sections.csv",
+    ) -> None:
+        """Append sections info for a problem to sections.csv with specified columns."""
+        header = [
+            "problem_id", "problem", "section_number",
+            "Problem for Section 1", "Solution1",
+            "Problem for Section 2", "Solution2",
+            "Problem for Section 3", "Solution3",
+        ]
+        row = {
+            "problem_id": problem_row.get("id", ""),
+            "problem": problem_row.get("problem", ""),
+            "section_number": str(len(parts)),
+            "Problem for Section 1": parts[0]["problem"] if len(parts) >= 1 else "None",
+            "Solution1": parts[0]["solution"] if len(parts) >= 1 else "None",
+            "Problem for Section 2": parts[1]["problem"] if len(parts) >= 2 else "None",
+            "Solution2": parts[1]["solution"] if len(parts) >= 2 else "None",
+            "Problem for Section 3": parts[2]["problem"] if len(parts) >= 3 else "None",
+            "Solution3": parts[2]["solution"] if len(parts) >= 3 else "None",
+        }
+        file_exists = os.path.exists(out_path)
+        with open(out_path, mode='a', encoding='utf-8', newline='') as f:
+            w = csv.DictWriter(f, fieldnames=header)
+            if not file_exists:
+                w.writeheader()
+            w.writerow(row)
+
+    def write_lean_sections_csv(
+        self,
+        problem_id: str,
+        section_codes: List[str],
+        out_path: str = "lean_sections.csv",
+    ) -> None:
+        """Write/append a row containing Lean code per section with fail/None semantics."""
+        header = [
+            "problem_id", "section_number", "lean_section1", "lean_section2", "lean_section3"
+        ]
+        # Normalize to exactly 3 entries, pad with "None"
+        normalized = list(section_codes[:3])
+        while len(normalized) < 3:
+            normalized.append("None")
+        section_number = str(len([c for c in normalized if c and c != "None"]))
+        row = {
+            "problem_id": problem_id,
+            "section_number": section_number,
+            "lean_section1": normalized[0],
+            "lean_section2": normalized[1],
+            "lean_section3": normalized[2],
+        }
+        file_exists = os.path.exists(out_path)
+        with open(out_path, mode='a', encoding='utf-8', newline='') as f:
+            w = csv.DictWriter(f, fieldnames=header)
+            if not file_exists:
+                w.writeheader()
+            w.writerow(row)
+
+    def parse_sections_from_response(self, response: str) -> List[Dict[str, str]]:
+        """Parse the PARTS and PART i/ PART i Solution blocks into list of dicts."""
+        lines = [l.strip() for l in response.splitlines()]
+        parts: List[Dict[str, str]] = []
+        current: Dict[str, str] = {}
+        expecting: str | None = None
+        for ln in lines:
+            if ln.upper().startswith("PART ") and ":" in ln and "Solution" not in ln:
+                if current:
+                    parts.append(current)
+                current = {"problem": ln.split(":", 1)[1].strip(), "solution": ""}
+                expecting = "problem"
+            elif ("Solution:" in ln) and ":" in ln:
+                if not current:
+                    current = {"problem": "", "solution": ""}
+                current["solution"] = ln.split(":", 1)[1].strip()
+                expecting = "solution"
+            else:
+                if current and expecting == "solution" and ln:
+                    current["solution"] += ("\n" + ln if current["solution"] else ln)
+                elif current and expecting == "problem" and ln and not ln.upper().startswith("PARTS:"):
+                    current["problem"] += ("\n" + ln if current["problem"] else ln)
+        if current:
+            parts.append(current)
+        # Trim to at most 3 as required
+        return parts[:3] if parts else []
+
+    def divide_solution_into_sections(self, problem_id: str, problem: str, solution: str) -> List[Dict[str, str]]:
+        """Use Gemini to divide solution into up to 3 sections and return structured parts; also write sections.csv."""
+        prompt = (
+            "You are an expert mathematician and proof strategist. Your task is to analyze a given mathematical proof problem and its correct solution. Your goal is to break down the solution's logic into a sequence of smaller, self-contained \"lemmas\" or \"theorems\" that can be proven sequentially.\n\n"
+            "## Instructions\n\n"
+            "Analyze Complexity: First, carefully review the [Correct Solution]. Determine if the proof is complex enough to warrant a breakdown. A complex proof might involve multiple distinct steps, a proof by cases, a key construction, or the use of a significant intermediate result.\n\n"
+            "Decision to Divide:\n\n- If the solution is simple and short (e.g., a direct application of a definition), do not divide it. Present it as a single part.\n\n- If the solution is complex, divide it into at most 3 logical parts. Each part should be a self-contained statement (a lemma) that builds towards the final proof. The proof of a later part may assume the previous parts have been proven.\n\n"
+            "Formulate Sub-Problems: For each part, clearly state the theorem or lemma that needs to be proven. Frame it as a precise mathematical statement with latex.\n\n"
+            "Provide Rationale: Briefly explain the strategy behind your division. Describe how proving these smaller parts in sequence logically leads to the final result.\n\n"
+            "## Input\n\n"
+            f"Problem to Prove:\n{problem}\n\n"
+            f"Correct Solution:\n{solution}\n\n"
+            "Format your response as:\nPARTS: [number]\nPART 1: [description]\nPART 1 Solution: [description]\nPART 2: [description]\nPART 2 Solution: [description]\nPART 3: [description]\nPART 3 Solution: [description]\n"
+        )
+        # Use chat context for this problem
+        resp = self.call_gemini(prompt)
+        parts = self.parse_sections_from_response(resp)
+        if not parts:
+            parts = [{"problem": problem, "solution": solution}]
+        self.write_sections_csv({"id": problem_id, "problem": problem}, parts)
+        return parts
+
     def create_new_chat(self):
         """Create a new chat session for a new problem."""
         self.current_chat = self.gemini_client.chats.create(model=self.gemini_model)

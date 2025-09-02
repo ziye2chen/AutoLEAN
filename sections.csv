@@ -1,0 +1,52 @@
+problem_id,problem,section_number,Problem for Section 1,Solution1,Problem for Section 2,Solution2,Problem for Section 3,Solution3
+2023a5,"Let $a_{1}, a_{2}, \ldots, a_{2023}$ be positive integers such that}
+\begin{itemize}
+  \item $a_{1}, a_{2}, \ldots, a_{2023}$ is a permutation of $1,2, \ldots, 2023$, and
+  \item $\left|a_{1}-a_{2}\right|,\left|a_{2}-a_{3}\right|, \ldots,\left|a_{2022}-a_{2023}\right|$ is a permutation of $1,2, \ldots, 2022$.
+\end{itemize}
+
+Prove that $\max \left(a_{1}, a_{2023}\right) \geqslant 507$.",1,"Let $a_{1}, a_{2}, \ldots, a_{2023}$ be positive integers such that}
+\begin{itemize}
+  \item $a_{1}, a_{2}, \ldots, a_{2023}$ is a permutation of $1,2, \ldots, 2023$, and
+  \item $\left|a_{1}-a_{2}\right|,\left|a_{2}-a_{3}\right|, \ldots,\left|a_{2022}-a_{2023}\right|$ is a permutation of $1,2, \ldots, 2022$.
+\end{itemize}
+
+Prove that $\max \left(a_{1}, a_{2023}\right) \geqslant 507$.","Let $N$ be a positive integer and $a_{1}, a_{2}, \ldots, a_{2 N-1}$ be positive integers such that
+
+\begin{itemize}
+  \item $a_{1}, a_{2}, \ldots, a_{2 N-1}$ is a permutation of $1,2, \ldots, 2 N-1$, and
+  \item $\left|a_{1}-a_{2}\right|,\left|a_{2}-a_{3}\right|, \ldots,\left|a_{2 N-2}-a_{2 N-1}\right|$ is a permutation of $1,2, \ldots, 2 N-2$.
+\end{itemize}
+
+Then $a_{1}+a_{2 N-1} \geqslant N+1$ and hence $\max \left(a_{1}, a_{2 N-1}\right) \geqslant\left\lceil\frac{N+1}{2}\right\rceil$.\\
+Now we proceed to the proof of the generalised statement. We introduce the notion of score of a number $a \in\{1,2, \ldots, 2 N-1\}$. The score of $a$ is defined to be
+
+$$
+s(a):=|a-N| .
+$$
+
+Note that, by the triangle inequality,
+
+$$
+|a-b| \leqslant|a-N|+|N-b|=s(a)+s(b) .
+$$
+
+Considering the sum $\left|a_{1}-a_{2}\right|+\left|a_{2}-a_{3}\right|+\cdots+\left|a_{2 N-2}-a_{2 N-1}\right|$, we find that
+
+$$
+\begin{aligned}
+(N-1)(2 N-1) & =\left|a_{1}-a_{2}\right|+\left|a_{2}-a_{3}\right|+\cdots+\left|a_{2 N-2}-a_{2 N-1}\right| \\
+& \leqslant 2\left(s\left(a_{1}\right)+s\left(a_{2}\right)+\cdots+s\left(a_{2 N-1}\right)\right)-\left(s\left(a_{1}\right)+s\left(a_{2 N-1}\right)\right) \\
+& =2 N(N-1)-\left(s\left(a_{1}\right)+s\left(a_{2 N-1}\right)\right) .
+\end{aligned}
+$$
+
+For the last equality we used that the numbers $s\left(a_{1}\right), s\left(a_{2}\right), \ldots, s\left(a_{2 N-1}\right)$ are a permutation of $0,1,1,2,2, \ldots, N-1, N-1$.
+
+Hence, $s\left(a_{1}\right)+s\left(a_{2 N-1}\right) \leqslant 2 N(N-1)-(N-1)(2 N-1)=N-1$. We conclude that
+
+$$
+\left(N-a_{1}\right)+\left(N-a_{2 N-1}\right) \leqslant s\left(a_{1}\right)+s\left(a_{2 N-1}\right) \leqslant N-1,
+$$
+
+which implies $a_{1}+a_{2 N-1} \geqslant N+1$.",None,None,None,None

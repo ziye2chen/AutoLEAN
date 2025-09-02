@@ -344,3 +344,99 @@ For issues and questions:
 ---
 
 **Note**: AutoLEAN is designed to assist with mathematical proof formalization but may require manual review and refinement for complex proofs. Always verify the generated code before using it in production environments.
+
+## LeanExplore Integration (Missing Import Repair)
+
+When Lean reports a missing module error like:
+
+```
+... of module Mathlib.Analysis.SpecialFunctions.Trigonometric.Sum does not exist
+```
+
+AutoLEAN can query LeanExplore to suggest replacement Mathlib imports and retry compilation.
+
+### Install and Configure
+
+1) Install the Python package (already included in `requirements.txt`):
+
+```bash
+pip install lean-explore>=0.1.3
+```
+
+2) Provide an API key in one of the following ways:
+
+- Environment variable (recommended)
+
+```bash
+# Windows
+set LEANEXPLORE_API_KEY=your_api_key_here
+
+# Linux/Mac
+export LEANEXPLORE_API_KEY=your_api_key_here
+```
+
+- Or via LeanExplore CLI config (if you use their CLI):
+
+```bash
+lean-explore auth login   # follow prompts
+```
+
+AutoLEAN first tries `config_utils.load_api_key()` and falls back to `LEANEXPLORE_API_KEY`.
+
+### How AutoLEAN Uses LeanExplore
+
+On a “module does not exist” error, AutoLEAN:
+
+- Extracts the missing module path from the compiler error
+- Sends a search query to LeanExplore asking for matching Mathlib files
+- Collects the top candidates (up to 20) and converts them to concrete `import Mathlib.…` lines
+- Removes the offending import and inserts the suggested ones, then re-runs Lean
+
+This happens automatically during the section refinement loop.
+
+### Example: Programmatic Use (Async)
+
+```python
+import asyncio
+from lean_explore.api.client import Client
+from lean_explore.cli import config_utils
+
+async def main():
+    api_key = config_utils.load_api_key()  # or read from LEANEXPLORE_API_KEY
+    client = Client(api_key=api_key)
+
+    query = """
+The libraries inside Mathlib.Algebra.BigOperators to provide the `∑ k in S, ...` notation
+Suggest exact Mathlib import paths I can use to replace a missing module.
+"""
+
+    res = await client.search(query=query)
+    print(f"Found {res.count} results")
+    for item in res.results[:20]:
+        src = item.source_file  # e.g. Mathlib/Algebra/BigOperators/Group/Finset/Defs.lean
+        # Convert to an import line:
+        mod = src.replace('/', '.').replace('\\', '.')
+        if mod.endswith('.lean'):
+            mod = mod[:-5]
+        if not mod.startswith('Mathlib.'):
+            mod = f'Mathlib.{mod}'
+        print(f"import {mod}")
+
+asyncio.run(main())
+```
+
+### Crafting Good Queries
+
+- State what is missing and what functionality you need, for example:
+
+```
+Replace the missing module `Mathlib.Analysis.SpecialFunctions.Trigonometric.Sum` with available Mathlib imports
+that provide standard trigonometric lemmas/definitions to compile this code.
+Return exact import lines.
+```
+
+### Notes & Limits
+
+- LeanExplore suggestions are heuristic; keep the validated import set fixed once compilation succeeds
+- If no suitable candidates are found, the section will be marked as failed and recorded in `lean_sections.csv`
+- This flow only triggers for explicit “does not exist” module errors; other errors are handled by Gemini refinement
