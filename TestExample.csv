@@ -1,46 +1,625 @@
 problem_id,problem,solution
-2023a5,"Let $a_{1}, a_{2}, \ldots, a_{2023}$ be positive integers such that}
-\begin{itemize}
-  \item $a_{1}, a_{2}, \ldots, a_{2023}$ is a permutation of $1,2, \ldots, 2023$, and
-  \item $\left|a_{1}-a_{2}\right|,\left|a_{2}-a_{3}\right|, \ldots,\left|a_{2022}-a_{2023}\right|$ is a permutation of $1,2, \ldots, 2022$.
-\end{itemize}
+1969p5,"Given $n > 4$ points in the plane such that no three are collinear, prove that there are at least $C(n-3, 2) = {n-3 \choose 2} = \frac{(n-3)(n-4)}{2}$ convex quadrilaterals whose vertices are four of the given points.","We start by proving that given $5$ points, there is at least one convex quadrilateral formed by $4$ of them. Denote the $5$ points by $A, B, C, D, E$. Without loss of generality, we can chose to label the points so that $C, D, E$ are on one side of the line $line(AB)$. Further, we chose to label the point $C$ so that $D, E$ are on one side of $line(AC)$. It follows that $D, E$ are inside $\angle(BAC)$, with segments $AB$ and $AC$ extended beyond $B$ and $C$ respectively.
 
-Prove that $\max \left(a_{1}, a_{2023}\right) \geqslant 507$.","Let $N$ be a positive integer and $a_{1}, a_{2}, \ldots, a_{2 N-1}$ be positive integers such that
+Note that from the choice of $A, B, C$ it follows that $\angle(BAC) < 2\pi$. Also, we could have chosen $A, B, C$ by considering the convex hull of the set of 5 points. It is either a triangle, or a convex quadrilateral, or a convex pentagon. We choose $A$ to be any of the vertices, and $B, C$ to be the adjacent vertices. (We don't need these notes in the proof, I just wanted to make things easier to visualize.)
 
-\begin{itemize}
-  \item $a_{1}, a_{2}, \ldots, a_{2 N-1}$ is a permutation of $1,2, \ldots, 2 N-1$, and
-  \item $\left|a_{1}-a_{2}\right|,\left|a_{2}-a_{3}\right|, \ldots,\left|a_{2 N-2}-a_{2 N-1}\right|$ is a permutation of $1,2, \ldots, 2 N-2$.
-\end{itemize}
+The picture below shows this choice of labels.
 
-Then $a_{1}+a_{2 N-1} \geqslant N+1$ and hence $\max \left(a_{1}, a_{2 N-1}\right) \geqslant\left\lceil\frac{N+1}{2}\right\rceil$.\\
-Now we proceed to the proof of the generalised statement. We introduce the notion of score of a number $a \in\{1,2, \ldots, 2 N-1\}$. The score of $a$ is defined to be
+The line $line(DE)$ must intersect at least one of $line(AB)$ and $line(AC)$. Without loss of generality, we can assume it intersects $line(AB)$. In general, it will also intersect $line(AC)$. The argument we are going to give is for the case when $line(DE)$ intersects both $line(AB)$ and $line(AC)$. The argument needed in the limiting case when $line(DE) \parallel line(AC)$ is identical, and is left as an exercise to the reader.
 
-$$
-s(a):=|a-N| .
-$$
+There are three cases:
 
-Note that, by the triangle inequality,
+Case 1, when $line(DE)$ intersects $segment(AB)$, but it does not intersect $segment(AC)$. This is shown on the first 3 pictures (one picture would have been enough, but I made all of them, for emphasis). In this case the quadrilateral formed by the points $A, D, E, C$ is convex. (Note that this also applies to the case when $line(DE) \parallel line(AC)$.)
 
-$$
-|a-b| \leqslant|a-N|+|N-b|=s(a)+s(b) .
-$$
+Case 2, when $line(DE)$ intersects both $segment(AB)$ and $segment(AC)$. This is shown in the 4th picture. In this case the quadrilateral formed by the points $B, D, E, C$ is convex.
 
-Considering the sum $\left|a_{1}-a_{2}\right|+\left|a_{2}-a_{3}\right|+\cdots+\left|a_{2 N-2}-a_{2 N-1}\right|$, we find that
+Case 3, when $line(DE)$ does not intersect either of $segment(AB)$ or $segment(AC)$. This is shown in the 5th picture. In this case the quadrilateral formed by the points $B, D, E, C$ is convex. (Note that this also applies to the case when $line(DE) \parallel line(AC)$.)
 
-$$
-\begin{aligned}
-(N-1)(2 N-1) & =\left|a_{1}-a_{2}\right|+\left|a_{2}-a_{3}\right|+\cdots+\left|a_{2 N-2}-a_{2 N-1}\right| \\
-& \leqslant 2\left(s\left(a_{1}\right)+s\left(a_{2}\right)+\cdots+s\left(a_{2 N-1}\right)\right)-\left(s\left(a_{1}\right)+s\left(a_{2 N-1}\right)\right) \\
-& =2 N(N-1)-\left(s\left(a_{1}\right)+s\left(a_{2 N-1}\right)\right) .
-\end{aligned}
-$$
+We thus proved that in any group of 5 points, there is a subgroup of 4 points which forms a convex quadrilateral. Note that in general, given a group of 5 points, more than one convex quadrilateral can be found by taking subgroups of 4 points.
 
-For the last equality we used that the numbers $s\left(a_{1}\right), s\left(a_{2}\right), \ldots, s\left(a_{2 N-1}\right)$ are a permutation of $0,1,1,2,2, \ldots, N-1, N-1$.
+Important remark: In fact, we proved more: if $D, E$ are inside the angle $\angle(BAC)$ formed by $line(AB)$ and $line(AC)$ (with segments $AB$ and $AC$ extended beyond $B$ and $C$ respectively), then we can choose the convex quadrilateral so that $D, E$ are both part of it.
 
-Hence, $s\left(a_{1}\right)+s\left(a_{2 N-1}\right) \leqslant 2 N(N-1)-(N-1)(2 N-1)=N-1$. We conclude that
+Now the statement of the problem is easy to prove. Assume $n$ points are given. Choose $3$ of them, and label them $A, B, C$, so that all the other points are inside $\angle(BAC)$. There are $(n - 3)$ such points. Now choose all the groups of $2$ points from these $(n - 3)$ points. There are ${n-3 \choose 2} = \frac{(n-3)(n-4)}{2}$ ways of doing this. From what we proved before, we know that for each choice of 2 points, call them $D, E$, there is a group of $4$ points from among $A, B, C, D, E$ which forms a convex quadrilateral, such that $D, E$ are $2$ of the $4$ points. A different choice $D_1, E_1$ will yield a different quadrilateral because $\{D, E\} \ne \{D_1, E_1\}$.
 
-$$
-\left(N-a_{1}\right)+\left(N-a_{2 N-1}\right) \leqslant s\left(a_{1}\right)+s\left(a_{2 N-1}\right) \leqslant N-1,
-$$
+This concludes the proof.
 
-which implies $a_{1}+a_{2 N-1} \geqslant N+1$."
+"
+1969p6,"Prove that for all real numbers $x_1, x_2, y_1, y_2, z_1, z_2$, with $x_1 > 0, x_2 > 0, x_1y_1 - z_1^2 > 0, x_2y_2 - z_2^2 > 0$, the inequality \[\frac{8}{(x_1 + x_2)(y_1 + y_2) - (z_1 + z_2)^2} \leq \frac{1}{x_1y_1 - z_1^2} + \frac{1}{x_2y_2 - z_2^2}\] is satisfied. Give necessary and sufficient conditions for equality.","First, remark that given the conditions of the problem, it follows that $y_1 > 0, y_2 > 0$. Also, we can assume $z_1 \ge 0, z_2 \ge 0$. Indeed, if $z_1 < 0$, then $z_1 < -z_1$. It follows $z_1 + z_2 < -z_1 + z_2$, so \[\frac{1}{(x_1 + x_2)(y_1 + y_2) - (z_1 + z_2)^2} < \frac{1}{(x_1 + x_2)(y_1 + y_2) - (-z_1 + z_2)^2}\]
+
+So, if we proved the inequality for positive $z_1$ it is also true for negative $z_1$.
+
+Now consider the function $F$ of three variables \[F(x, y, z) = \frac{1}{xy - z^2}\] defined on the domain $x, y > 0, z \ge 0, z^2 < xy$. For simplicity, denote a point $(x, y, z)$ in the domain by $P$. The inequality in the problem can be rewritten as \[F \left( \frac{P_1 + P_2}{2} \right) \le \frac{1}{2}[F(P_1) + F(P_2)]\]
+
+This follows immediately from the inequality expressing the fact that $F(x, y, z)$ is a convex function. (In fact, it is equivalent to the convexity of $F$, but this is not needed for our proof of the given inequality.) Therefore, it is enough to prove that the function $F(x, y, z)$ is convex.
+
+We will prove that this function is convex. In fact, we will prove that the function is strictly convex. This will imply that equality holds only when $P_1 = P_2$, in other words, $x_1 = x_2, y_1 = y_2, z_1 = z_2$, which will give us the necessary and sufficient conditions for equality.
+
+We use the theorem which says that a twice differentiable function defined on a convex set is convex if and only if its Hessian is positive definite. Furthermore, if the Hessian is strictly positive definite, then the function is strictly convex.
+
+The Hessian of the function $F(x, y, z)$ is the 3x3 matrix $H$ formed by the second derivatives of $F$:
+
+$\frac{\partial^2 F}{\partial x^2} \hspace{20pt} \frac{\partial^2 F}{\partial x \partial y} \hspace{20pt} \frac{\partial^2 F}{\partial x \partial z} \\ \\ \\ \frac{\partial^2 F}{\partial y \partial x} \hspace{20pt} \frac{\partial^2 F}{\partial y^2} \hspace{20pt} \frac{\partial^2 F}{\partial y \partial z} \\ \\ \\ \frac{\partial^2 F}{\partial z \partial x} \hspace{20pt} \frac{\partial^2 F}{\partial z \partial y} \hspace{20pt} \frac{\partial^2 F}{\partial z^2}$
+
+$H$ is positive definite if for any 3x1 vector $v$ we have $v^t H v \ge 0$. ($v^t$ is the transpose of $v$, a matrix which is 1x3.) $H$ is strictly positive definite if $v^t H v > 0$ unless $v = 0$.
+
+Explicitly, we need to show that if $a, b, c$ are three numbers, then
+
+$a^2 \frac{\partial^2 F}{\partial x^2} + ab \frac{\partial^2 F}{\partial x \partial y} + ac \frac{\partial^2 F}{\partial x \partial z} + ab \frac{\partial^2 F}{\partial y \partial x} + b^2 \frac{\partial^2 F}{\partial y^2} + bc \frac{\partial^2 F}{\partial y \partial z} + ac \frac{\partial^2 F}{\partial z \partial x} + bc \frac{\partial^2 F}{\partial z \partial y} + c^2 \frac{\partial^2 F}{\partial z^2} \ge 0$
+
+and that the expression is $= 0$ only when $a = b = c = 0$.
+
+Before embarking on the computations proving the inequality expressing the positive definiteness of the Hessian of $F$, let us show that the domain of $F$ is convex. Let $P_1 = (x_1, y_1, z_1)$ and $P_2 = (x_2, y_2, z_2)$ be two points in the domain of $F$. This means that $x_1, y_1, x_2, y_2 > 0$, $z_1, z_2 \ge 0$, $z_1^2 < x_1 y_1$ and $z_2^2 < x_2 y_2$. We need to verify that the same is true for $P = t P_1 + (1 - t) P_2$ when $0 < t < 1$. The only thing which is not obvious is $[t z_1 + (1 - t) z_2]^2 < [t x_1 + (1 - t) x_2] [t y_1 + (1 - t) y_2]$. To see this, work out the multiplications, use what we already know about $z_1^2$ and $z_2^2$, simplify by $t(1-t)$ and we are left with showing that $2 z_1 z_2 < x_1 y_2 + x_2 y_1$. This can be seen as follows: $2 z_1 z_2 < 2 \sqrt{x_1 y_1} \sqrt{x_2 y_2} = 2 \sqrt{(x_1 y_2) (x_2 y_1)} \le x_1 y_2 + x_2 y_1$.
+
+Now work towards proving the inequality expressing that the Hessian of $F$ is positive definite. Compute all the second derivatives of $F$; notice that they all have $(xy - z^2)^3$ at the denominator, so we can simplify with this factor. (The computation is made somewhat shorter by taking advantage of the fact that the order of taking the derivatives makes no difference in mixed derivatives (for example  $\frac{\partial^2 F}{\partial x \partial y} = \frac{\partial^2 F}{\partial y \partial x}$).)
+
+We get (as the thing we have to prove) that
+
+$2a^2y^2 + 2ab(xy + z^2) - 8acyz + 2b^2x^2 - 8bcxz + c^2(2xy + 6z^2) \ge 0$.
+
+If $a = b = 0$ the expression equals $0$ if and only if $c = 0$ as well. So, assume that at least one of $a, b$ is $\ne 0$. We can assume $a \ne 0$. We will show that in this case, the expression is $> 0$.
+
+Simplify by $2$, and rearrange the terms so we can think of the expression on the left as a polynomial in $c$:
+
+$(xy + 3z^2)c^2 - 4(xb + ya)zc + [x^2b^2 + y^2a^2 + (xy + z^2)ab] > 0$.
+
+Notice that this is a polynomial (in $c$) of degree $2$ of the type $AX^2 + BX + C$, whose leading coefficient is $> 0$. To show that its values are always $> 0$ we need to show that its discriminant is $< 0$, in other words, $B^2 - 4AC < 0$.
+
+Therefore, we need to show that
+
+$16[(xb + ya)z]^2 - 4(xy + 3z^2)[x^2b^2 + y^2a^2 + (xy + 3z^2)ab] < 0$
+
+After factoring out $4$, and working out all multiplications, this becomes
+
+$-x^3yb^2 + x^2z^2b^2 - xy^3a^2 + y^2z^2a^2 - x^2y^2ab + 4xyz^2ab - 3z^4ab < 0$
+
+After some rearranging of terms, grouping, and factoring, this becomes
+
+$-(xy - z^2)[x^2b^2 + (xy - 3z^2)ab + y^2a^2] < 0$
+
+Since $x^2 < xy$, we need to show
+
+$x^2b^2 + (xy - 3z^2)ab + y^2a^2 > 0$
+
+Now, view the expression on the left hand side as a polynomial of degree $2$ in $b$, whose leading coefficient is $> 0$. To conclude that its values are $> 0$ we need to show that its discriminant is $< 0$. That is, we need to show that
+
+$[(xy - 3z^2)a]^2 - 4x^2y^2a^2 < 0$
+
+Work out the multiplications, and regroup terms to get
+
+$-3a^2(xy - z^2)(xy + 3z^2) < 0$.
+
+This is clearly true, which concludes the proof."
+1968p1,"Prove that there is one and only one triangle whose side lengths are consecutive integers, and one of whose angles is twice as large as another.","So, let us start by assuming that two angles are $\alpha, 2\alpha$ and the sides are $x, x + 1, x + 2$. We will want to apply the Law of Sines:
+
+$\frac{x}{\sin A} = \frac{x + 1}{\sin B} = \frac{x + 2}{\sin C}$
+
+The angles $A, B, C$ should be so that $\sin A \le \sin B \le \sin C$, but we don't know how to map $\{A, B, C\}$ to $\{\alpha, 2\alpha, \pi - 3\alpha\}$. One thing we know, is that  $\sin \alpha < \sin 2\alpha$. Indeed, if $\alpha \le \pi/4$ the inequality is true because $\sin$ is increasing on $[0, \pi/2]$. Now note that $\alpha < \pi/3$ since otherwise $\pi - 3\alpha$ could not be the angle of a triangle. So, if $\pi/4 < \alpha < \pi/3$ then $\pi/2 < 2\alpha < 2\pi/3$ and $\sin \alpha < \sqrt{3}/2 < \sin 2\alpha$.
+
+That means we will have to consider three possibilities:
+
+1: $\ \ \frac{x}{\sin \alpha} = \frac{x + 1}{\sin 2\alpha} = \frac{x + 2}{\sin (\pi - 3\alpha)}$
+
+2: $\ \ \frac{x}{\sin \alpha} = \frac{x + 1}{\sin (\pi - 3\alpha)} = \frac{x + 2}{\sin 2\alpha}$
+
+3: $\ \ \frac{x}{\sin (\pi - 3\alpha)} = \frac{x + 1}{\sin \alpha} = \frac{x + 2}{\sin 2\alpha}$
+
+Using the identities $\sin (\pi - \theta) = \sin \theta, \sin 2\theta = 2\sin \theta \cos \theta$ and $\sin 3\theta = 3\sin \theta - 4\sin^3 \theta = \sin \theta\ (4\cos^2 \theta - 1)$ and simplifying by $\sin \alpha$ the three cases become
+
+1: $\ \ x = \frac{x + 1}{2\cos \alpha} = \frac{x + 2}{4\cos^2 \alpha - 1}$
+
+2: $\ \ x = \frac{x + 1}{4\cos^2 \alpha - 1} = \frac{x + 2}{2\cos \alpha}$
+
+3: $\ \ \frac{x}{4\cos^2 \alpha - 1} = x + 1 = \frac{x + 2}{2\cos \alpha}$
+
+Each case is a system of two equations in two unknowns, $x, \cos \alpha$. We will solve each system, obtain all possible solutions, and chose those values for which $x, x + 1, x + 2$ and $\alpha, 2\alpha, \pi - 3\alpha$ can be the sides and angles of a triangle.
+
+Case 1: Compute $x$ from $x = \frac{x + 1}{2\cos \alpha}$. We get $x = \frac{1}{2\cos \alpha - 1}$. Substitute $x$ in $x = \frac{x + 2}{4\cos^2 \alpha - 1}$. After doing all the computations we get $4\cos^2 \alpha - 4\cos \alpha = 0$. The roots are $\cos \alpha = 0$ and $\cos \alpha = 1$. None are acceptable if $\alpha$ is an angle of a triangle. So case 1 yields no solutions.
+
+Case 2: Compute $x$ from $x = \frac{x + 2}{2\cos \alpha}$. We get $x = \frac{2}{2\cos \alpha - 1}$. Substitute $x$ in $x = \frac{x + 1}{4\cos^2 \alpha - 1}$. After doing all the computations we get $8\cos^2 \alpha - 2\cos \alpha - 3 = 0$. The solutions are $\cos \alpha = \frac{3}{4}$ and $\cos \alpha = -\frac{1}{2}$. Only $\cos \alpha = \frac{3}{4}$ is acceptable, and it yields $x = \frac{2}{\frac{6}{4} - 1} = 4$. Thus $4, 5, 6$ is a possible solution to the problem.
+
+Case 3: Compute $x$ from $x + 1 = \frac{x + 2}{2\cos \alpha}$. We get $x = \frac{2 - 2\cos \alpha}{2\cos \alpha - 1}$. Substitute $x$ in $x + 1 = \frac{x}{4\cos^2 \alpha - 1}$. After doing all the computations we get $4\cos^2 \alpha + 2\cos \alpha - 3 = 0$. The roots are $\cos \alpha = \frac{-1 \pm \sqrt{13}}{4} \approx 0.65, -1.15$. The positive value is for an $\alpha$ acceptable as an angle in a triangle (it is a little over $\pi/4$), and yields $x = \frac{\sqrt{13} + 1}{2}$. We can easily verify that $x, x + 1, x + 2$ can be the sides of a triangle. (Indeed, they are $\frac{\sqrt{13} + 1}{2}, \frac{\sqrt{13} + 3}{2}, \frac{\sqrt{13} + 5}{2}$ and $\frac{\sqrt{13} + 1}{2} + \frac{\sqrt{13} + 3}{2} > \frac{\sqrt{13} + 5}{2}$). However, they are not integer, so are not solutions to the problem.
+
+The only solution to the problem is the triangle with sides $4, 5, 6$ from case 2."
+1968p4,"Prove that in every tetrahedron there is a vertex such that the three edges meeting there have lengths which are the sides of a triangle.
+","Let the edges of one of the faces of the tetrahedron have lengths $a$, $b$, and $c$. Let $d$, $e$, and $f$ be the lengths of the sides that are not adjacent to the sides with lengths $a$, $b$, and $c$, respectively.
+
+Without loss of generality, assume that $\max(a,b,c,d,e,f)=a$. I shall now prove that either $b+f>a$ or $c+e>a$, by proving that if $b+f\leq a$, then $c+e>a$.
+
+Assume that $b+f\leq a$. The triangle inequality gives us that $e+f>a$, so $e$ must be greater than $b$. We also have from the triangle inequality that $b+c>a$. Therefore $e+c>b+c>a$. Therefore either $b+f>a$ or $c+e>a$.
+
+If $b+f>a$, then the vertex where the sides of length $a$, $b$, and $f$ meet satisfies the given condition. If $c+e>a$, then the vertex where the sides of length $a$, $c$, and $e$ meet satisfies the given condition. This proves the statement. $\blacksquare$"
+1967p1,"Let $ABCD$ be a parallelogram with side lengths $AB = a$, $AD = 1$, and with $\angle BAD = \alpha$. If $\Delta ABD$ is acute, prove that the four circles of radius $1$ with centers $A$, $B$, $C$, $D$ cover the parallelogram if and only if
+
+$a\leq \cos \alpha+\sqrt{3}\sin \alpha$","We can assume $a > 1$. Indeed, refer to Remark 2 above to see that if $a \le 1$ there is nothing to prove.
+
+Note that instead of the statement $S1$ we can consider the following statement $S1'$:
+
+$S1'$: the circles of radius $1$ centered at $A, B, D$ cover $\triangle ABD$.
+
+This is equivalent to $S1$ because of the symmetry between $\triangle ABD$ and $\triangle BCD$.
+
+Let $F$ be the intersection above $AB$ of the circles of radius $1$ centered at $A, B$. The three circles cover $\triangle ABD$ if an only if $F$ is inside the circle of radius 1 centered at $D$.
+
+This needs an explanation: Let $H$ be the midpoint of $BD$, and consider $\triangle FHD$. All the vertices of this triangle are in the circle centered at $D$, so the whole triangle is inside this circle. It is obvious that $\triangle FHB$ is inside the circle centered at $B$, and that $\triangle FAD, \triangle FAB$ are inside the circles centered at $A, B$.
+
+We will now show that $F$ is inside the circle of radius 1 centered at $D$ if an only if $DF \le 1$.
+
+The plan is to calculate $DF$ in terms of $a, \alpha$ and impose this condition. Let $FG \perp AB$, $DE \perp AB$ and $FF' \parallel GE$. From the right triangle $\triangle AFG$ we have $FG = \sqrt{1 - \left( \frac{a}{2} \right)^2} = \frac{\sqrt{4 - a^2}}{2}$. From the right triangle $\triangle DFF'$ we have
+
+$DF = \sqrt{(DF')^2 + (FF')^2} = \sqrt{(DE - FG)^2 + (AG - AE)^2} = \sqrt{\left( \sin \alpha - \frac{\sqrt{4 - a^2}}{2} \right)^2 + \left( \frac{a}{2} - \cos \alpha \right)^2}$
+
+(Note that here we used the fact that $\alpha$ is acute. These equalities would look slightly differently otherwise.)
+
+Now look at the condition $DF \le 1$, or equivalently $DF^2 \le 1$. Making all the computations and simplifications, we have $\sqrt{4 - a^2} \sin \alpha \ge 1 - a \cos \alpha$.
+
+Now I would like to square both sides. In order to get an equivalent inequality, we need to know that $1 - a \cos \alpha \ge 0$. This follows from the fact that $\angle ADB$ is acute. Indeed, denote $\angle ADB = \beta$. From the law of sines in $\triangle ADB$ we have $\frac{1}{\sin \angle ABD} = \frac{a}{\sin \beta}$. Successively this becomes $\frac{1}{\sin (\pi - \alpha - \beta)} = \frac{a}{\sin \beta}$ or $\frac{1}{\sin (\alpha + \beta)} = \frac{a}{\sin \beta}$ or $(1 - a \cos \alpha) \sin \beta = a \sin \alpha \cos \beta$. From here we see that $\beta < \frac{\pi}{2}$ implies the right hand side is positive, so $1 - a \cos \alpha > 0$.
+
+Going back to our inequality, we can square both sides, and after rearranging terms we get that $DF \le 1$ if and only if
+
+$a^2 - 2a \cos \alpha + (1 - 4 \sin^2 \alpha) \le 0$.
+
+View this as an equation of degree $2$ in $a$. The value of the polynomial in $a$ is $\le 0$ when $a$ is between its solutions, that is
+
+$\cos \alpha - \sqrt{3} \sin \alpha \le a \le \cos \alpha + \sqrt{3} \sin \alpha$.
+
+Note that $\cos \alpha - \sqrt{3} \sin \alpha = 2 \cos \left( \alpha + \frac{\pi}{3} \right)$. If $\alpha \in \left( 0, \frac{\pi}{2} \right)$ then $\left( \alpha + \frac{\pi}{3} \right) \in \left( \frac{\pi}{3}, \frac{5\pi}{6} \right)$, and it follows that $2 \cos \left( \alpha + \frac{\pi}{3} \right) \le 1$.
+
+On the other hand, remember that we are in the case $a > 1$, so the left inequality is always true. It follows that
+
+$DF \le 1$ (i.e. the three circles of radius $1$ centered at $A, B, D$ cover $\triangle ABD$) if an only if $a \le \cos \alpha + \sqrt{3} \sin \alpha$."
+1967p2,"Prove that if one and only one edge of a tetrahedron is greater than $1$, then its volume is $\le \frac{1}{8}$.","Let $\mathcal{T}$ be the set of tetrahedrons with five edges $\le 1$. This proof will show that there is a $T \in \mathcal{T}$ with one edge $> 1$ and such that $\mathbf{volume} (T) = \frac{1}{8}$, and that for any $U \in \mathcal{T}$ either $U = T$ or there is a finite sequence of tetrahedrons $T_1, \dots, T_n$ such that
+
+$\mathbf{volume} (U) = \mathbf{volume} (T_1) < \dots < \mathbf{volume} (T_n) = \mathbf{volume} (T)$.
+
+The statement of the problem is a consequence of these facts.
+
+We begin with two simple propositions.
+
+Proposition
+
+Let $ABCD$ be a tetrahedron, and consider the transformations which rotate $\triangle ABC$ around $AB$ while keeping $\triangle ABD$ fixed. We get a set of tetrahedrons, two of which, $ABC_1D$ and $ABC_2D$ are shown in the picture below. The lengths of all sides except $CD$ are constant through this transformation.
+
+1. Assume that the angles between the planes $ABD$ and $ABC$, and $ABD$ and $ABC_1$ are both acute. If the perpendicular from $C_1$ to the plane $ABD$ is larger that the perpendicular from $C$ to the plane $ABD$ then the volume of $ABC_1D$ is larger than the volume of $ABCD$.
+
+2. Furthermore, the tetrahedron $ABC_2D$ obtained when the position of $C_2$ is such that the planes $ABD$ and $ABC_2$ are perpendicular has the maximum volume of all tetrahedrons obtained from rotating $\triangle ABC$ around $AB$.
+
+These statements are intuitively clear, since the volume $V$ of the tetrahedron $ABCD$ is given by
+
+$V = \frac{1}{3} \cdot ($area of $\triangle ABD) \cdot ($height from $C)$.
+
+A formal proof is very easy, and I will skip it.
+
+Corollary
+
+Given a tetrahedron $T$, and an edge $e_1$ of it, we can find another tetrahedron $U$ such that $\mathbf{volume}(U) > \mathbf{volume}(T)$, with an edge $f_1 > e_1$, and such that all the other edges of $U$ are equal to the corresponding edges of $T$, $\mathbf{unless}$ the edge $e_1$ stretches between sides of $T$ which are perpendicular. When we chose a bigger $f_1$, if $e_1 < 1$ we can choose $f_1 = 1$. Or, we can choose $f_1$ such that it stretches between sides which are perpendicular.
+
+(By ""stretches between two sides"" I mean that the end points of the edge are the vertices on the two sides which are not common to the two sides. In the picture above, $DC_2$ stretches between the sides $ABD, AC_2B$ of $ABC_2D$.)
+
+Lemma
+
+Assume we have a tetrahedron $T$ with edges $e_1, \dots, e_6$, such that $e_2, \dots, e_6 \le 1$. If there is an edge $e_m < 1$ among $e_2, \dots, e_6$ then there is a tetrahedron $U$ with volume bigger than the volume of $T$, whose edges are equal to those of $T$, except for $e_m$, which is replaced by an edge of size $1$.
+
+Proof
+
+Case 1: If $T$ does not have any sides which are perpendicular, then the existence of $U$ follows from the corollary.
+
+Case 2: Assume $T$ has exactly two sides which are perpendicular (like $ABC_2D$ in the picture above). If $C_2D < 1$ and it were the only edge $< 1$, then all the other edges are $= 1$ (because they were assumed to be $\le 1$). In this case $\triangle ABD, \triangle AC_2B$ are equilateral with sides $= 1$, and the planes can not be perpendicular since $C_2D < 1$. (Indeed, an easy computation shows that if we take two equilateral triangles $\triangle ABD, \triangle AC_2B$ and place them perpendicular to each other, then $CD = \frac{\sqrt{6}}{2} > 1$.) So $e_m$ must be one of the other sides. Then again, the existence of $U$ follows from the corollary.
+
+Case 3: Assume that three sides are perpendicular.
+
+Assume the perpendicular sides are the ones meeting at $A$, i.e. each pair of the planes meeting at $A$ are perpendicular. Since at least two of the edges $BD, BC, CD \le 1$ it follows that $AB, AC, AD < 1$ (the sides of the right angle in a right triangle are less than the hypotenuse). Just for the sake of notation, assume $e_m = AB < 1$. We can apply the corollary, and find a tetrahedron $U$ with volume bigger than the volume of $T$, with edges equal to those of $T$, except that $AB$ is replaced by an edge $= 1$.
+
+Now the problem is very easy to prove. Let $T$ be a tetrahedron with edges $e_1, \dots, e_6$, such that $e_2, \dots, e_6 \le 1$. Apply the lemma as many times as necessary (up to five times), successively replacing each edge $< 1$ by an edge $= 1$. We obtain a tetrahedron $U$ with five edges $f_2, \dots, f_6 = 1$, and one edge $f_1 = e_1$. If $f_1$ stretches between two perpendicular sides, we are done. If not, apply the corollary one more time to obtain a bigger tetrahedron in which $f_1$ is replaced by a larger edge which stretches between two perpendicular sides.
+
+We obtain the same result as in the first solution: the largest tetrahedron is the one formed by two equilateral triangles with sides $= 1$, having one side in common, with the two planes containing the triangles perpendicular. An easy calculation shows that the edge which is $> 1$ is in fact of length $\frac{\sqrt{6}}{2}$, and the volume of this tetrahedron is $\frac{1}{8}$."
+1967p3,"Let $k, m, n$ be natural numbers such that $m+k+1$ is a prime greater than $n+1.$ Let $c_s=s(s+1).$ Prove that the product \[(c_{m+1}-c_k)(c_{m+2}-c_k)\cdots (c_{m+n}-c_k)\] is divisible by the product $c_1c_2\cdots c_n$.","First, assume $m + 1 \le k \le m + n$. In this case, $(c_{m + 1} - c_k)(c_{m + 2} - c_k) \cdots (c_{m + n} - c_k) = 0$, and we can say that $0$ is divisible by anything.
+
+Next, assume $m + n < k$. In this case, each factor of the first product is negative, and we will consider the product
+
+$P = (c_k - c_{m + 1})(c_k - c_{m + 2}) \cdots (c_k - c_{m + n})$
+
+for the sake of working with positive factors.  $P$ differs from the product in the problem by at most a sign, so it is enough to show that $P$ is divisible by $c_1c_2 \cdots c_n$.
+
+The proof of this fact goes along the same lines as the proof when $m + 1 > k$. We will give the proof for the sake of having a complete, properly written proof.
+
+Using $p(p + 1) - q(q + 1) = (p + q + 1)(p - q)$ we get that $c_1c_2 \cdots c_n = (n + 1)! \cdot n!$. We also get that $P = \prod_{p = 1}^n (k + m + p + 1) \cdot \prod_{p = 1}^n (k - m - p)$.
+
+We have that $n!\ |\ \prod_{p = 1}^n (k - m - p)$ (i.e. the product is divisible by the factorial) because
+
+$\frac{\prod_{p = 1}^n (k - m - p)}{n!} = \frac{(k - m - 1)!}{(k - m - 1 - n)! \cdot n!} = {k - m - 1 \choose n}$
+
+which is an integer. (Note that this all makes sense because we are in the case when $m + n < k$.)
+
+Let us now show that $(n + 1)!\ |\ \prod_{p = 1}^n (k + m + p + 1)$. Let $P_1 = \prod_{p = 1}^n (k + m + p + 1)$. We have that
+
+$\frac{(k + m + 1) \cdot P_1}{(n + 1)!} = \frac{(k + m + 1) \cdot \prod_{p = 1}^n (k + m + p + 1)}{(n + 1)!} = \frac{\prod_{p = 0}^n (k + m + p + 1)}{(n + 1)!} = \frac{(k + m + n + 1)!}{(k + m)! \cdot (n + 1)!} = {k + m + n + 1 \choose n + 1}$
+
+which is an integer. So $(n + 1)!\ |\ (k + m + 1) \cdot P_1$. But none of the factors of $(n + 1)!$ is a divisor of $(k + m + 1)$ because $(k + m + 1)$ is prime, and $n + 1 < k + m + 1$. So $P_1 = \prod_{p = 1}^n (k + m + p + 1)$ must be divisible by $(n + 1)!$."
+1966p2,"et $a$, $b$, and $c$ be the lengths of the sides of a triangle, and $\alpha,\beta,\gamma$ respectively, the angles opposite these sides. Prove that if
+
+\[a+b=\tan{\frac{\gamma}{2}}(a\tan{\alpha}+b\tan{\beta}),\]
+
+the triangle is isosceles.","First, we'll prove that both $\alpha$ and $\beta$ are acute. At least one of them has to be acute because these are angles of a triangle. We can assume that $\alpha$ is acute. We want to show that $\beta$ is acute as well. For a proof by contradiction, assume $\beta \ge \frac{\pi}{2}$.
+
+From the hypothesis, it follows that $(a + b) \tan \frac{\alpha + \beta}{2} = a \tan \alpha + b \tan \beta$.
+
+From $\alpha < \frac{\pi}{2} \le \beta$ it follows that $a < b$. So,
+
+$b \tan \beta = (a + b) \tan \frac{\alpha + \beta}{2} - a \tan \alpha > 2a \tan \frac{\alpha + \beta}{2} - a \tan \alpha \ge a (2 \tan \left( \frac{\alpha}{2} + \frac{\pi}{4} \right) - \tan \alpha) =$
+
+$2a \left( \frac{\tan \frac{\alpha}{2} + 1}{1 - \tan \frac{\alpha}{2}} - \frac{\tan \frac{\alpha}{2}}{1 - \tan^2 \frac{\alpha}{2}} \right) = 2a \cdot \frac{\tan^2 \frac{\alpha}{2} + \tan \frac{\alpha}{2} + 1} {1 - \tan^2 \frac{\alpha}{2}} > 0$
+
+because the numerator is $> 0$ (because $Y^2 + Y + 1 > 0$ for any real $Y$), and the denominator is also $> 0$ (because $\alpha < \frac{\pi}{2}$, so $\tan \frac{\alpha}{2} < \tan \frac{\pi}{4} = 1$).
+
+It follows that $\tan \beta > 0$, so it can not be that $\beta \ge \frac{\pi}{2}$.
+
+Now, we will prove that $(a + b) \tan \frac{\alpha + \beta}{2} = a \tan \alpha + b \tan \beta$ implies $\alpha = \beta$.
+
+Replace $a = \sin \alpha \cdot 2R$ and $b = \sin \beta \cdot 2R$ (in fact, we don't care that $R$ is the radius of the circumscribed circle), and simplify by $2R$. We get
+
+$(\sin \alpha + \sin \beta) \tan \frac{\alpha + \beta}{2} = \sin \alpha \tan \alpha + \sin \beta \tan \beta$.
+
+This becomes
+
+$\left( \sin \frac{\alpha + \beta}{2} \tan \frac{\alpha + \beta}{2} \right) \cdot \cos \frac{\alpha - \beta}{2} = \frac{1}{2}(\sin \alpha \tan \alpha + \sin \beta \tan \beta)$
+
+We will show that the function $f(x) = \tan x \sin x$ is convex on the interval $\left( 0, \frac{\pi}{2} \right)$. Indeed, the first derivative is $f'(x) = \frac{\sin x}{\cos^2 x} + \sin x$, and the second derivative is $f''(x) = \frac{\cos^4 x - \cos ^2 x + 2}{\cos^3 x}$.
+
+We have $f''(x) > 0$ on $\left( 0, \frac{\pi}{2} \right)$ since the numerator is $> 0$ (because $Y^2 - Y + 1 > 0$ for any real $Y$), and the denominator is $> 0$ on the interval $\left( 0, \frac{\pi}{2} \right)$. It follows that $f(x) = \tan x \sin x$ is convex on the interval $\left( 0, \frac{\pi}{2} \right)$.
+
+Using the convexity we have $f \left( \frac{x + y}{2} \right) \le \frac{1}{2} (f(x) + f(y))$. In our case, we have
+
+$\frac{1}{2}(\sin \alpha \tan \alpha + \sin \beta \tan \beta) = \left( \sin \frac{\alpha + \beta}{2} \tan \frac{\alpha + \beta}{2} \right) \cdot \cos \frac{\alpha - \beta}{2} \le \frac{1}{2}(\sin \alpha \tan \alpha + \sin \beta \tan \beta) \cdot \cos \frac{\alpha - \beta}{2}$.
+
+We can simplify by $\sin \alpha \tan \alpha + \sin \beta \tan \beta$ because it is positive (because both $\alpha, \beta$ are acute!), and we get
+
+$1 \le \cos \frac{\alpha - \beta}{2}$. This is possible only when $\cos \frac{\alpha - \beta}{2} = 1$, i.e. $\alpha = \beta$."
+1966p3,Prove that the sum of the distances of the vertices of a regular tetrahedron from the center of its circumscribed sphere is less than the sum of the distances of these vertices from any other point in space.,"We will first prove the problem in the 2-dimensional case. We do this to convey the idea of the proof, and because we will use this in one spot in proving the 3-dimensional case. So let us prove that:
+
+The sum of the distances of the vertices of an equilateral triangle $\triangle ABC$ from the center $O$ of its circumscribed circle is less than the sum of the distances of these vertices from any other point $P$ in the plane.
+
+We will do the proof in three steps:
+
+$\mathbf{1.}$ We will show that if $P$ is in one of the exterior regions, then there is a point $P_1$ on the boundary of the triangle (a vertex, or on a side), such that $PA + PB + PC > P_1A + P_1B + P_1C$.
+
+$\mathbf{2.}$ Then we will show that if $P$ is on the boundary, then $PA + PB + PC > OA + OB + OC$.
+
+$\mathbf{3.}$ For the final step, we will show that if $P$ is a point of minimum for $PA + PB + PC$ inside the triangle, then the extensions of $PA, PB, PC$ are perpendicular to the opposite sides $BC, AC, AB$. This implies that $P = O$.
+
+$\mathbf{Proof\ of\ 1:}$ If the point $P$ is outside the triangle, it can be in one of six regions as seen in the pictures below.
+
+If $P$ is in a region delimited by extensions of two sides of the triangle, as in the picture on the left, we notice that by taking $P_1 = A$, $PA + PB + PC > P_1A + P_1B + P_1C$ (because $P_1A = 0$ and $P_1B < PB$ as sides in an obtuse triangles, and similarly $P_1C < PC$).
+
+If $P$ is in a region delimited by a segment which is a side of the triangle and by the extensions of two sides, as in the picture on the right, take $P_1 =$ the foot of the perpendicular from $P$ to $AB$. Then $PA + PB + PC > P_1A + P_1B + P_1C$ (because the triangle $\triangle PP_1C$ is obtuse, and because the triangles $\triangle PP_1A, \triangle PP_1B$ are right triangles).
+
+$\mathbf{Proof\ of\ 2:}$ Now assume that $P_1 = A$. A direct, simple computation shows that $P_1A + P_1B + P_1C > OA + OB + OC$ (indeed, if we take the side of the triangle to be $1$, then $P_1A + P_1B + P_1C = 2$, and $OA + OB + OC = 3 \cdot \frac{\sqrt{3}}{3} = \sqrt{3}$).
+
+Now assume that $P_1$ is on $AB$. If $P_1$ is not the midpoint of $AB$, let $P_2$ be the midpoint. Then $P_1A + P_1B + P_1C > P_2A + P_2B + P_2C$ (because $P_1A + P_1B = P_2A + P_2B = AB$ and $P_1C > P_2C$). A direct, simple computation shows that $P_2A + P_2B + P_2C > OA + OB + OC$ (indeed, if we take the side of the triangle to be $1$, $P_2A + P_2B + P_2C = 1 + \frac{\sqrt{3}}{2}$ and $OA + OB + OC = \sqrt{3}$).
+
+$\mathbf{Proof\ of\ 3:}$ Assume that $P$ is inside the triangle $\triangle ABC$. In this case, we make a proof by contradiction. We will show that if $P$ is a point where $PA + PB + PC$ is minimum, then the extensions of $PA, PB, PC$ are perpendicular to the opposite sides $BC, AC, AB$. (This statement implies that $P = O$.) If this were not true, at least one of $PA \perp BC, PB \perp AC, PC \perp AB$ would be false. We can assume that $PC$ is not perpendicular to $AB$. Then draw the ellipse with focal points $A, B$ which goes through $P$.
+
+Now consider the point $P_1$ on the ellipse such that $CP_1 \perp AB$. Because of the properties of the ellipse, $CP_1 < CP$, and because of the definition of the ellipse $PA + PB = P_1A + P_1B$. We conclude that $PA + PB + PC > P_1A + P_1B + P_1C$, which contradicts the assumption that $P$ was such that $PA + PB + PC$ was minimum.
+
+This proves the 2-dimensional case.
+
+NOTE: a very picky reader might object that the proof used that a minimum of $PA + PB + PC$ exists, and is achieved at a point $P$ inside the triangle. This can be justified simply by noting that $PA + PB + PC > 0$ and quoting the theorem from calculus (or is it topology?) which says that a continuous function on a closed, bounded set has a minimum, and there is a point where the minimum is achieved. Because of the arguments in the proof, this point can not be on the boundary of the triangle, so it is inside.
+
+Now we will give the proof in the 3-dimensional case. We will do the proof in three steps. It is extremely similar to the proof in the 2-dimensional case, we just need to go from 2D to 3D, so I will skip some details.
+
+$\mathbf{1.}$ We will show that if $P$ is in one of the exterior regions, then there is a point $P_!$ on the boundary of the tetrahedron (a vertex, or on a edge, or on a side, such that $PA + PB + PC + PD > P_1A + P_1B + P_1C + P_1D$.
+
+$\mathbf{2.}$ Then we will show that if $P$ is on the boundary, then $PA + PB + PC + PD > OA + OB + OC + OD$.
+
+$\mathbf{3.}$ For the final step, consider the plane going through the edge $CD$ perpendicular to the edge $AB$, the plane going through $AB$ perpendicular to $CD$, the plane going through $CA$ perpendicular to $BD$, etc. There are six such planes, and they all contain $O$, the center of the circumscribed sphere. We will show that if $P$ is a point of minimum for $PA + PB + PC + PD$ inside the tetrahedron, then $P$ is in each of the six planes described above. This implies that $P = O$.
+
+$\mathbf{Proof\ of\ 1:}$ Let $P$ be in one of the exterior regions. Assume $P$ is in a prism shaped region delimited by extensions of three sides meeting in a vertex (there are 4 of them). Assume it is at vertex $A$, the sides being the extensions of planes $ABC, ABD, ACD$. Then take $P_1 = A$. We have $PA + PB + PC + PD > P_1A + P_1B + P_1C + P_1D$ because of obtuse triangles formed with $PP_1$.
+
+Now assume $P$ is in one of the wedge shaped regions, formed by an edge and the extensions of two sides going through them. (there are six such regions.) Assume this is the line $AB$ and the extensions of $ABC, ABD$. Then take $P_1$ to be the foot of the perpendicular from $P$ to $AB$. Again, we have the desired inequality because $PP_1$ formed some right and obtuse triangles.
+
+Now assume $P$ is in the truncated prism region delimited by a side and the extensions of the faces going through the edges of this side. (There are four such regions.) Assume this is the side $ABC$, and extensions of the sides $DAB, DBC, DCA$. Then take $P_1$ to be the foot of the perpendicular from $P$ to the plane $ABC$. Again, we have the desired inequality because of right and obtuse triangles formed by $PP_1$.
+
+$\mathbf{Proof\ of\ 2:}$ Assume $P_1 = A$. If we take the edge of the tetrahedron to be $1$, a direct computation gives us that $P_1A + P_1B + P_1C + P_1D = 3$, and $OA + OB + OC + OD = 4 \cdot \frac{\sqrt{6}}{4} = \sqrt{6}$.
+
+Assume $P_1$ is on $AB$. If $P_1$ is not the midpoint of $AB$, take $P_2$ to be the midpoint of $AB$. Then $P_1A + P_1B + P_1C + P_1D > P_2A + P_2B + P_2C + P_2D$ because of right triangles formed by $P_2C, P_2D$. And, if we take the edge of the tetrahedron to be $1$, a direct computation yields that $P_2A + P_2B + P_2C + P_2D = 1 + 2 \cdot \frac{\sqrt{3}}{2} = 1 + \sqrt{3}$, which is bigger than $OA + OB + OC + OD = \sqrt{6}$.
+
+Assume $P_1$ is on $ABC$. If $P_1$ is not the circumcenter of $\triangle ABC$ then take $P_2$ to be the circumcenter. We have $P_1D > P_2D$ because $P_2D \perp ABC$. We also have $P_1A + P_1B + P_1C > P_2A + P_2B + P_2C$ because we proved the 2-dimensional analogue of the problem. And, if we take the edge of the tetrahedron to be $1$, we have $P_2A + P_2B + P_2C + P_2D = \sqrt{3} + \frac{\sqrt{6}}{3}$, which is bigger than $OA + OB + OC + OD = \sqrt{6}$.
+
+NOTE: In the above paragraph, we used that the similar result is true in the 2-dimensional case, with an equilateral triangle instead of a regular tetrahedron.
+
+NOTE: This part of the proof concludes filling in the gap in the first ""Solution"", written above. (A reader may complain that the proof in Solution 2 is very long (compared to the first ""Solution""), but the first ""Solution"" should have done this too, one way or another.)
+
+$\mathbf{Proof\ of\ 3:}$ Now consider the six planes going through one edge, perpendicular to the opposite edge. They intersect at the circumcenter of the tetrahedron. Assume $P$ is a point in the interior of the tetrahedron where $PA + PB + PC + PD$ achieves its minimum value. Then $P$ is in each of the six plane.
+
+Prove this statement by contradiction. Assume that there is a plane among the six, so that $P$ is not on it. Assume the plane is the one going through $CD$, perpendicular to $AB$. To make it more explicit, this is the plane going through $C, D, E$, where $E$ is the midpoint of $AB$.
+
+Consider the ellipsoid with focal points $A, B$ going through $P$. This can be obtained as the set of points $Q$ in space so that $QA + QB = PA + PB$. It can also be obtained as the surface obtained when we form the ellipse with focal points $A, B$ in the plane $ABC$ (as the set of points $Q$ so that $QA + QB = PA + PB$), and we rotate this ellipse from the plane $ABC$ around its axis $AB$. Let $P_1$ be the foot of the perpendicular from $P$ to the plane $CDE$. We have $PC > P_1C, PD > P_1D$ because $PP_1 \perp CDE$. We also have $PA + PB > P_1A + P_1B$ because $P_1$ is in the interior of the ellipsoid. (Indeed, the intersection of the plane $CDE$ and the ellipsoid is the circle generated by rotating the ends of the small axis of the ellipse in the plane $ABC$. Since the point $P$ is not on the plane CDE, it must be on a smaller circle, so its projection to the plane $CDE$ will be inside.)
+
+This concludes the proof of the problem."
+1966p4,"Prove that for every natural number $n$, and for every real number $x \neq \frac{k\pi}{2^t}$ ($t=0,1, \dots, n$; $k$ any integer) \[\frac{1}{\sin{2x}}+\frac{1}{\sin{4x}}+\dots+\frac{1}{\sin{2^nx}}=\cot{x}-\cot{2^nx}\]","First, we prove $\cot \theta - \cot 2\theta = \frac {1}{\sin 2\theta}$.
+
+LHS$\ =\ \frac{\cos \theta}{\sin \theta}-\frac{\cos 2\theta}{\sin 2\theta}$
+
+$= \frac{2\cos^2 \theta}{2\cos \theta \sin \theta}-\frac{2\cos^2 \theta -1}{\sin 2\theta}$
+
+$=\frac{2\cos^2 \theta}{\sin 2\theta}-\frac{2\cos^2 \theta -1}{\sin 2\theta}$
+
+$=\frac {1}{\sin 2\theta}$
+
+Using the above formula, we can rewrite the original series as
+
+$\cot x - \cot 2x + \cot 2x - \cot 4x + \cot 4x + \dots + \cot 2^{n-1} x - \cot 2^n x$.
+
+Which gives us the desired answer of $\cot x - \cot 2^n x$."
+1966p6,"In the interior of sides $BC, CA, AB$ of triangle $ABC$, any points $K, L,M$, respectively, are selected. Prove that the area of at least one of the triangles $AML, BKM, CLK$ is less than or equal to one quarter of the area of triangle $ABC$.","Let $\triangle ABC$ and $K, L, M$ be as in the problem. Denote $x = \frac{AM}{AB}, y = \frac{BK}{BC}, z = \frac{CL}{CA}$ as in Solution 2. Note that $x, y, z, \in (0, 1)$ because $K, L, M$ are in the interior of the respective sides.
+
+Using the fact that the area of a triangle is half of the product of two sides and $\sin$ of the angle between them (like in the first Solution), we have that $\mathbf{area} AML = x(1 - z) \mathbf{area} ABC, \mathbf{area} BKM = y(1 - x) \mathbf{area} ABC, \mathbf{area} CLK = z(1 - y) \mathbf{area} ABC$.
+
+Now the problem has nothing to do with geometry anymore: we just have to show that given three numbers $x, y, z, \in (0, 1)$, at least one of $x(1 - z), y(1 - x), z(1 - y)$ is $\le \frac{1}{4}$.
+
+If $y(1 - x) \le \frac{1}{4}$, we are done. Otherwise, we have $y(1 - x) > \frac{1}{4}$. It follows that $y > \frac{1}{4(1 - x)}$ (recall that $0 < x, y, z < 1$). In particular, it follows that $\frac{1}{4(1 - x)} < 1$, which implies $3 - 4x > 0$.
+
+If $z(1 - y) \le \frac{1}{4}$, we are done. Otherwise, we have $z(1 - y) > \frac{1}{4}$. Using the inequality on $y$ from the previous paragraph, we have $z \left( 1 - \frac{1}{4(1 - x)} \right) > \frac{1}{4}$, or after a few computations, $z \cdot \frac{3 - 4x}{1 - x} > 1$. Using the observation about $3 - 4x$ from the preceding paragraph, we get $z > \frac{1 - x}{3 - 4x}$.
+
+Now consider $x(1 - z)$. Using the inequality on $z$ from the previous paragraph, we have that $x(1 - z) < x \left( 1 - \frac{1 - x}{3 - 4x} \right)$. To finish the solution to the problem, it is enough to show that $x \cdot \left( 1 - \frac{1 - x}{3 - 4x} \right) \le \frac{1}{4}$.
+
+After some easy computations (and using again that $3 - 4x > 0$), this becomes $3(4x^2 - 4x + 1) \ge 0$, which is true because. $4x^2 - 4x + 1 = (2x - 1)^2$."
+1965p2,"Consider the system of equations \[a_{11}x_1 + a_{12}x_2 + a_{13}x_3 = 0\]\[a_{21}x_1 + a_{22}x_2 + a_{23}x_3 = 0\]\[a_{31}x_1 + a_{32}x_2 + a_{33}x_3 = 0\] with unknowns $x_1$, $x_2$, $x_3$. The coefficients satisfy the conditions:
+
+(a) $a_{11}$, $a_{22}$, $a_{33}$ are positive numbers;
+
+(b) the remaining coefficients are negative numbers;
+
+(c) in each equation, the sum of the coefficients is positive.
+
+Prove that the given system has only the solution $x_1 = x_2 = x_3 = 0$.","Clearly if the $x_i$ are all equal, then they are equal to 0. Now let's assume WLOG that $x_1=0$. If $x_2$ or $x_3$ is 0, then the other is clearly zero, so let's consider the case where neither are 0. $a_{12}$ and $a_{21}$ are negative, so exactly one of $x_2$ or $x_3$ is positive. Unfortunately this means that one of $a_{22}x_2 + a_{23}x_3$ or $a_{32}x_2 + a_{33}x_3 = 0$ is positive and the other is negative, so the equation couldn't possibly be satisfied if $x_2$ or $x_3$ isn't 0. We have covered the case where one of the $x_i$ is 0, now let's assume that none of them are 0.
+
+If two are positive and one is negative, then when the negative $x_i$ is paired with one of the positive $a_i$, the corresponding equation is negative. This is bad. If two are negative and one is positive, then when the positive $x_i$ is paired with one of the positive $a_i$, the corresponding equation is positive. This is also bad. Therefore the $x_i$ all have the same sign.
+
+Case 1: The $x_i$ are all positive. WLOG $x_1\leq x_2\leq x_3$. Now consider the third equation, $a_{31}x_1 + a_{32}x_2 + a_{33}x_3 = 0$. Therefore $x_2(a_{31} +a_{32}+a_{33})+ a_{31}(x_1-x_2)+a_{33}(x_3-x_2)= 0$, but all of the terms on the LHS are non-negative and the first one is positive, so this is impossible.
+
+Case 2: The $x_i$ are all negative. WLOG $x_1\geq x_2\geq x_3$. Consider the third equation, $a_{31}x_1 + a_{32}x_2 + a_{33}x_3 = 0$. Therefore $x_3(a_{31}+a_{32}+a_{33})+a_{31}(x_1-x_3)+a_{32}(x_2-x_3)=0$, but all of the terms on the LHS are non-positive and the first one is negative, so this is impossible.
+
+Therefore at least one of the $x_i$ is 0, which implies all of them are 0."
+1965p6,In a plane a set of $n$ points ($n\geq 3$) is given. Each pair of points is connected by a segment. Let $d$ be the length of the longest of these segments. We define a diameter of the set to be any connecting segment of length $d$. Prove that the number of diameters of the given set is at most $n$.,"$\mathbf{Definition:}$ For the purpose of this proof, let us define an $equilateral\ arc\ triangle$ as the shape we obtain when we take a triangle $\triangle ABC$ in which we replace the side $AB$ by the $\pi/6$ arc of the circle centered at $C$ with radius $CA = CB$, going from $A$ to $B$, and similarly for the other two sides $BC$ and $AC$.
+
+See the picture below.
+
+Note that if the sides of the original equilateral triangle were of length $d$, then the distance from a vertex to any point on the opposite arc is $d$. Also, the distance between any two points on the arcs, such that none of them are vertices is $< d$. And finally, the distance from a vertex to any point on the arcs adjacent to it (which is not another vertex) is $< d$.
+
+$\mathbf{Lemma:}$ A configuration of $n$ points has exactly $n$ diameters if an only if $3$ of the points are the vertices of an equilateral arc triangle, and the other $n - 3$ are on the boundary of the triangle.
+
+In the configuration shown above, we have $9$ points with $9$ diameters.
+
+$\mathbf{Proof\ of\ the\ Lemma:}$ It is clear that if we have a configuration as described in the lemma then there are $n$ diameters. We will prove the converse by induction. We want to prove that if we have a configuration of $n$ points with $n$ diameters, then the points are in a configuration as described above.
+
+If $n = 3$ it is clear that the $3$ points have to be the vertices of an equilateral triangle since the sides are equal (to $d$). Assume we know the statement to be true for $n$, and prove it for $n + 1$. Assume that we have $n + 1$ points with $n + 1$ diameters $d$. Consider $n$ of the points, and let $Q$ be the remaining point. It follows from the induction hypothesis that $3$ of the $n$ are the vertices of an equilateral arc triangle, and the other $n - 3$ are on the boundary.
+
+Now let us examine where $Q$ may be. It can not be outside of the equilateral arc triangle because then the distance to at least one of the vertices would be $d' > d$, and the diameter of the set would be $d'$ rather than $d$. It can not be inside the triangle because then all the distances from $Q$ to the $n$ points considered are $< d$, and we would not have $n + 1$ diameters, as assumed. So $Q$ must be on the boundary of the equilateral arc triangle, which proves the induction step, and the lemma.
+
+Now the solution to the problem is easy to finish. Assume we have $n$ points given, and the configuration has $m$ diameters. I claim that we can not have $m > n$. We prove this by contradiction. If we did, let us consider a set $S$ consisting of only $n$ of the diameters. Because of the lemma, this implies that the $n$ points form a configuration as described in the lemma, i.e. $3$ of them are the vertices of an equilateral arc triangle, and the other $n - 3$ are on the boundary. Now consider a diameter $D$ which is not in $S$. It is the distance of a segment between two of the points $P_1, P_2$ in the configuration. If one of $P_1, P_2$ is a vertex, then this diameter $D$ is in $S$, which is a contradiction. If none of $P_1, P_2$ are vertices, then the length of $P_1P_2 < d$, so $D = P_1P_2$ is not a diameter, which is again a contradiction.
+
+It follows that $m \le n$ which proves the problem."
+1964p2,"Suppose $a, b, c$ are the sides of a triangle. Prove that
+
+\[a^2(b+c-a)+b^2(c+a-b)+c^2(a+b-c)\le{3abc}.\]","Let $b+c-a = x$, $c+a-b = y$, and $a+b-c = z$. Then, $a = \frac{y+z}{2}$, $b = \frac{x+z}{2}$, and $c = \frac{x+y}{2}$. By AM-GM, \[\frac{x+y}{2} \geq \sqrt{xy},\]\[\frac{y+z}{2} \geq \sqrt{yz},\]\[\textrm{and }\frac{x+z}{2} \geq \sqrt{xz}.\]
+
+Multiplying these equations, we have \[\frac{x+y}{2} \cdot \frac{y+z}{2} \cdot \frac{x+z}{2} \geq xyz\]\[\therefore abc \geq (a+b-c)(b+c-a)(c+a-b).\] We can now simplify: \[(a+b-c)(b+c-a)(c+a-b) \leq abc\]\[(-a^2 + b^2 - c^2 + 2ac)(c+a-b) \leq abc\]\[a(-a^2 + b^2 - c^2 + 2ac) + c(-a^2 + b^2 - c^2 + 2ac) - b(-a^2 + b^2 - c^2 + 2ac) \leq abc\]\[-a^3 + ab^2 - ac^2 + 2a^2c - a^2c + b^2c - c^3 + 2ac^2 + a^2b - b^3 + bc^2 - 2abc \leq abc\]\[a^2b + a^2c - a^3 + b^2c + ab^2 - b^3 + ac^2 + bc^2 - c^3 - 2abc \leq abc\]\[a^2(b+c-a)+b^2(c+a-b)+c^2(a+b-c)\le{3abc}\textrm{. }\square\]"
+1964p4,Seventeen people correspond by mail with one another - each one with all the rest. In their letters only three different topics are discussed. Each pair of correspondents deals with only one of these topics. Prove that there are at least three people who write to each other about the same topic.,"Lemma: Consider a complete graph with 6 vertices colored with 2 colors. There exists a monochromatic triangle.
+
+Proof: Consider one vertex and all connections leading out from it. Call it $V_1$. It has 5 edges coming out from it. By the Pigeonhole Principle, there are at least 3 of the same color. Call this color red. Call those vertices $V_2$, $V_3$ and $V_4$. If any of the segments $V_2V_3$, $V_2V_4$, or $V_3V_4$ are red, then we have a monochromatic triangle with vertices $V_1$ and the other two that are also red. If they are all the other color, then we have a monochromatic triangle with vertices $V_2$,$V_3$, and $V_4$. $\blacksquare$
+
+
+
+Main Problem: Represent these people as vertices on a connected graph with 17 vertices and colored with 3 colors, one corresponding with each topic. So this problem is reduced to showing that on a connected graph with 17 vertices and colored with three colors, there exists some monochromatic triangle. Look at an arbitrary vertex. Call it $V_1$. Look at the 16 other vertices that it is connected to. By the Pigeonhole Principle, there are at least 6 vertices connected to $V_1$ that are all one color. Call this color 1. If any of the connections inbetween these six vertices are in color 1, then we are done. If none of them are color 1, we know that that there are only 2 colors in those 6 vertices. By Lemma 1, we know that there is a monochromatic triangle in those 6 vertices. So we are done."
+1963p3,"In an $n$-gon all of whose interior angles are equal, the lengths of consecutive sides satisfy the relation
+
+$a_1\ge a_2\ge \cdots \ge a_n$.
+Prove that $a_1=a_2=\cdots = a_n$.","Let $a_1 = p_1p_2$, $a_2 = p_2p_3$, etc.
+
+Plot the $n$-gon on the cartesian plane such that $p_1p_2$ is on the $x$-axis and the entire shape is above the $x$-axis. There are two cases: the number of sides is even, and the number of sides is odd:
+
+$\textbf{Case 1: Even}$
+
+In this case, the side with the topmost points will be $p_{\frac{n}{2}+1}p_{\frac{n}{2}+2}$. To obtain the $y$-coordinate of this top side, we can multiply the lengths of the sides $a_1$, $a_2$, ... $a_{\frac{n}{2}}$ by the sine of the angle they make with the $x$-axis:
+
+\[y\textrm{-coordinate} = \sum_{k = 1}^{\frac{n}{2}}a_k \cdot \sin \frac{2\pi(k-1)}{n}.\textbf{ (1)}\]
+
+We can obtain the $y$-coordinate of the top side in a different way by multiplying the lengths of the sides $a_{\frac{n}{2}+1}$, $a_{\frac{n}{2}+2}$, ... $a_n$ by the sine of the angle they make with the $x$-axis to get the $\emph{negated}$ $y$-coordinate of the top side:
+
+\[-y\textrm{-coordinate} = \sum_{k = \frac{n}{2}+1}^{n}a_k \cdot \sin \frac{2\pi(k-1)}{n}\]\[y\textrm{-coordinate} = \sum_{k = \frac{n}{2}+1}^{n}a_k \cdot -\sin \frac{2\pi(k-1)}{n}\]\[= \sum_{k = \frac{n}{2}+1}^{n}a_k \cdot \sin \frac{2\pi(k-\frac{n}{2}-1)}{n}\]\[= \sum_{k = 1}^{\frac{n}{2}}a_{k+\frac{n}{2}} \cdot \sin \frac{2\pi(k-1)}{n}.\textbf{ (2)}\]
+
+It must be true that $\textbf{(1)} = \textbf{(2)}$. This implies that $a_k = a_{k+\frac{n}{2}}$ for all $1 \leq k \leq \frac{n}{2}$, and therefore $a_1=a_2=\cdots = a_n$.
+
+$\textbf{Case 2: Odd}$
+
+This case is very similar to before. We will compute the $y$-coordinate of the top point $p_{frac{n+3}{2}}$ two ways:
+
+\[y\textrm{-coordinate} = \sum_{k = 2}^{\frac{n+1}{2}}a_k \cdot \sin \frac{2\pi(k-1)}{n}.\textbf{ (3)}\]\[-y\textrm{-coordinate} = \sum_{k = \frac{n+3}{2}}^{n}a_k \cdot \sin \frac{2\pi(k-1)}{n}\]\[y\textrm{-coordinate} = \sum_{k = \frac{n+3}{2}}^{n}a_k \cdot -\sin \frac{2\pi(k-1)}{n}\]\[= \sum_{k = \frac{n+3}{2}}^{n}a_k \cdot \sin \frac{2\pi(n - k + 1)}{n}\]\[= \sum_{k = 2}^{\frac{n+1}{2}}a_{n-k+2} \cdot \sin \frac{2\pi(k-1)}{n}.\textbf{ (4)}\]
+
+It must be true that $\textbf{(3)} = \textbf{(4)}$. Then, we get $a_k = a_{n-k+2}$ for all $2 \leq k \leq \frac{n+1}{2}$. Therefore, $a_2=a_3=\cdots = a_n$. It is trivial that $a_1$ is then equal to the other values, so $a_1=a_2=\cdots = a_n$. This completes the proof. $\square$"
+1963p5,Prove that $\cos{\frac{\pi}{7}}-\cos{\frac{2\pi}{7}}+\cos{\frac{3\pi}{7}}=\frac{1}{2}$.,"Because the sum of the $x$-coordinates of the seventh roots of unity is $0$, we have
+
+\[\cos{\frac{2\pi}{7}} + \cos{\frac{4\pi}{7}} + \cos{\frac{6\pi}{7}} + \cos{\frac{8\pi}{7}} + \cos{\frac{10\pi}{7}} + \cos{\frac{12\pi}{7}} + \cos{\frac{14\pi}{7}} = 0\]\[\cos{\frac{2\pi}{7}} + \cos{\frac{4\pi}{7}} + \cos{\frac{6\pi}{7}} + \cos{\frac{8\pi}{7}} + \cos{\frac{10\pi}{7}} + \cos{\frac{12\pi}{7}} = -1\]\[\cos{\frac{2\pi}{7}} + \cos{\frac{4\pi}{7}} + \cos{\frac{6\pi}{7}} + \cos{\left(-\frac{6\pi}{7}\right)} + \cos{\left(-\frac{4\pi}{7}\right)} + \cos{\left(-\frac{2\pi}{7}\right)} = -1.\]
+
+Now, we can apply $\cos{x} = \cos{\left(-x\right)}$ to obtain
+
+\[2\left(\cos{\frac{2\pi}{7}} + \cos{\frac{4\pi}{7}} + \cos{\frac{6\pi}{7}}\right) = -1\]\[\cos{\frac{2\pi}{7}} + \cos{\frac{4\pi}{7}} + \cos{\frac{6\pi}{7}} = -\frac{1}{2}.\]
+
+Finally, since $\cos{x} = -\cos{(\pi-x)}$,
+
+\[\cos{\frac{2\pi}{7}} - \cos{\frac{3\pi}{7}} - \cos{\frac{\pi}{7}} = -\frac{1}{2}\]\[\cos{\frac{\pi}{7}} - \cos{\frac{2\pi}{7}} + \cos{\frac{3\pi}{7}} = \frac{1}{2}\textrm{. }\square\]"
+1962p6,"Consider an isosceles triangle. Let $r$ be the radius of its circumscribed circle and $\rho$ the radius of its inscribed circle. Prove that the distance $d$ between the centers of these two circles is
+
+$d=\sqrt{r(r-2\rho)}$.","Instead of an isosceles triangle, let us consider an arbitrary triangle $ABC$. Let $ABC$ have circumcenter $O$ and incenter $I$. Extend $AI$ to meet the circumcircle again at $L$. Then extend $LO$ so it meets the circumcircle again at $M$. Consider the point where the incircle meets $AB$, and let this be point $D$. We have $\angle ADI = \angle MBL = 90^{\circ}, \angle IAD = \angle LMB$; thus, $\triangle ADI \sim \triangle MBL$, or $\frac {ID}{BL} = \frac {AI} {ML} \iff ID \cdot ML = 2r\rho = AI \cdot BL$. Now, drawing line $BI$, we see that $\angle BIL = \frac {1}{2}\angle A + \frac {1}{2}\angle ABC, \angle IBL = \frac {1}{2}\angle ABC + \angle CBL = \frac {1}{2}\angle ABC + \frac {1}{2}\angle A$. Therefore, $BIL$ is isosceles, and $IL = BL$. Substituting this back in, we have $2r\rho = AI\cdot IL$. Extending $OI$ to meet the circumcircle at $P,Q$, we see that $AI\cdot IL = PI\cdot QI$ by Power of a Point. Therefore, $2r\rho = PI \cdot QI = (PO + OI)(QO - OI) = (r + d)(r - d)$, and we have $2r\rho = r^2 - d^2 \iff d = \sqrt {r(r - 2\rho)}$, and we are done."
+1962p7,"The tetrahedron $SABC$ has the following property: there exist five spheres, each tangent to the edges $SA, SB, SC, BC, CA, AB$, or to their extensions.
+
+(a) Prove that the tetrahedron $SABC$ is regular.
+
+(b) Prove conversely that for every regular tetrahedron five such spheres exist.","Part (a)
+
+Let points $P_{SA}, P_{SB}, P_{SC}, P_{BC}, P_{CA}, P_{AB}$ be the points where the smallest sphere is tangent to the edges $SA,  SB,  SC,  BC,  CA,  AB$ respectively.
+
+For each face of the tetrahedron there is a circular cross section of the smallest sphere. Since that circle also needs to be tangent to the edges, then that circle is the incircle of each triangular face.
+
+From the properties of an incircle we know that:
+
+$|AP_{AB}|=|AP_{AC}|$, $|BP_{BC}|=|BP_{BA}|$, and $|CP_{CA}|=|CP_{CB}|$ in $\Delta ABC$
+
+There is a larger circle that is tangent to $AB$ and the extensions of $CA$ and $CB$.
+
+This larger circle is a cross section of the sphere that's also tangent to the extension of $CS$ away from $S$ and the edges of $\Delta ABC$
+
+Therefore, this larger circle and the incircle of $\Delta ABC$ are part of that same sphere.
+
+In order for these two circles to be part of the same sphere and also tangent to line $AB$, then the point of the tangent of this larger circle needs to be the same as point $P_{AB}$
+
+The only way these to circles can share the same tangent point on edge $AB$ is if $|AP_{AB}|=|BP_{AB}|$
+
+Using the same argument with the larder circle of edge $BC$ then $|BP_{BC}|=|CP_{BC}|$
+
+and with the larger circle of edge $AC$ then $|CP_{AC}|=|AP_{AC}|$
+
+This results in:
+
+$|AP_{AB}|=|AP_{AC}|=|BP_{BC}|=|BP_{BA}|=|CP_{CA}|=|CP_{CB}|$ in $\Delta ABC$
+
+which means that
+
+$|AB|=|BC|=|AC|$ in $\Delta ABC$, thus $\Delta ABC$ is an equilteral triangle.
+
+Likewise,
+
+$|AB|=|BS|=|AS|$ in $\Delta ABS$, thus $\Delta ABS$ is an equilteral triangle.
+
+$|AS|=|SC|=|AC|$ in $\Delta ASC$, thus $\Delta ASC$ is an equilteral triangle.
+
+$|SB|=|BC|=|SC|$ in $\Delta SBC$, thus $\Delta SBC$ is an equilteral triangle.
+
+Since all four faces are equilateral triangles, then tetrahedron $ABCS$ is a regular tetrahedron.
+
+
+
+Part (b)
+
+Let's consider a regular tetrahedron in the cartesian space with center at $(0,0,0)$ with $r_c$ as the circumradius.
+
+We can write the coordinates for the four vertices as:
+
+$V_1=\left( \frac{2\sqrt{2}}{3}r_c ,\;0,\;-\frac{r_c}{3}\right)$
+
+$V_2=\left( -\frac{\sqrt{2}}{3}r_c ,\;\frac{\sqrt{6}}{3}r_c,\;\frac{-r_c}{3}\right)$
+
+$V_3=\left( -\frac{\sqrt{2}}{3}r_c ,\;-\frac{\sqrt{6}}{3}r_c,\;\frac{-r_c}{3}\right)$
+
+$V_4=\left(0 ,\;0,\;r_c\right)$
+
+And the midpoints of all edges as:
+
+$M_{12}=\frac{V_1-V_2}{2}=\left( \frac{\sqrt{2}}{6}r_c ,\;\frac{\sqrt{6}}{6}r_c,\;-\frac{r_c}{3}\right)$
+
+$M_{13}=\frac{V_1-V_3}{2}=\left( \frac{\sqrt{2}}{6}r_c ,\;-\frac{\sqrt{6}}{6}r_c,\;-\frac{r_c}{3}\right)$
+
+$M_{23}=\frac{V_2-V_3}{2}=\left( -\frac{\sqrt{2}}{3}r_c ,\;0,\;-\frac{r_c}{3}\right)$
+
+$M_{14}=\frac{V_1-V_4}{2}=\left( \frac{\sqrt{2}}{3}r_c ,\;0,\;\frac{r_c}{3}\right)$
+
+$M_{24}=\frac{V_2-V_4}{2}=\left( -\frac{\sqrt{2}}{6}r_c ,\;\frac{\sqrt{6}}{6}r_c,\;\frac{r_c}{3}\right)$
+
+$M_{34}=\frac{V_3-V_4}{2}=\left( -\frac{\sqrt{2}}{6}r_c ,\;-\frac{\sqrt{6}}{6}r_c,\;\frac{r_c}{3}\right)$
+
+Now we calculate the following six dot products:
+
+$(V_1-V_2) \bullet M_{12}=\left( -\sqrt{2}r_c \right)\left( \frac{\sqrt{2}}{6}r_c \right)+ \left(  \frac{\sqrt{6}}{3}r_c\right)\left( \frac{\sqrt{6}}{6}r_c \right)+ 0=-\frac{1}{3}r_c^2+\frac{1}{3}r_c^2=0$
+
+$(V_1-V_3) \bullet M_{13}=\left( -\sqrt{2}r_c \right)\left( \frac{\sqrt{2}}{6}r_c \right)+ \left(-  \frac{\sqrt{6}}{3}r_c\right)\left( -\frac{\sqrt{6}}{6}r_c \right)+ 0=-\frac{1}{3}r_c^2+\frac{1}{3}r_c^2=0$
+
+$(V_2-V_3) \bullet M_{23}=0+\left(-  \frac{\sqrt{6}}{6}r_c\right)\left( 0\right)+ 0=0$
+
+$(V_1-V_4) \bullet M_{13}=\left( 2\frac{\sqrt{2}}{3}r_c \right)\left( \frac{\sqrt{2}}{3}r_c \right)+0+ \left(-  \frac{4}{3}r_c\right)\left( \frac{1}{3}r_c \right)=\frac{4}{9}r_c^2-\frac{4}{9}r_c^2=0$
+
+$(V_2-V_4) \bullet M_{13}=\left( -\frac{\sqrt{2}}{3}r_c \right)\left( -\frac{\sqrt{2}}{6}r_c \right)+\left( \frac{\sqrt{6}}{3}r_c \right)\left( \frac{\sqrt{6}}{6}r_c \right)+ \left(-  \frac{4}{3}r_c\right)\left( \frac{1}{3}r_c \right)=\frac{1}{9}r_c^2+\frac{1}{3}r_c^2-\frac{4}{9}r_c^2=0$
+
+$(V_3-V_4) \bullet M_{13}=\left( -\frac{\sqrt{2}}{3}r_c \right)\left( -\frac{\sqrt{2}}{6}r_c \right)+\left( -\frac{\sqrt{6}}{3}r_c \right)\left( -\frac{\sqrt{6}}{6}r_c \right)+ \left(-  \frac{4}{3}r_c\right)\left( \frac{1}{3}r_c \right)=\frac{1}{9}r_c^2+\frac{1}{3}r_c^2-\frac{4}{9}r_c^2=0$
+
+Since all these dot producs equal to $0$ that means that the lines from the center to each of the midpoints are all perpendicular.
+
+Now we calculate the distances from $(0,0,0)$ to all the midpoints:
+
+$|M_{12}|=\sqrt{\left( \frac{\sqrt{2}}{6}r_c\right)^2+\left(\frac{\sqrt{6}}{6}r_c\right)^2+\left(-\frac{r_c}{3}\right)^2}=\frac{\sqrt{3}}{3}r_c$
+
+$|M_{13}|=\sqrt{\left( \frac{\sqrt{2}}{6}r_c\right)^2+\left(-\frac{\sqrt{6}}{6}r_c\right)^2+\left(-\frac{r_c}{3}\right)^2}=\frac{\sqrt{3}}{3}r_c$
+
+$|M_{23}|=\sqrt{\left( -\frac{\sqrt{2}}{3}r_c\right)^2+\left(0\right)^2+\left(-\frac{r_c}{3}\right)^2}=\frac{\sqrt{3}}{3}r_c$
+
+$|M_{14}|=\sqrt{\left( \frac{\sqrt{2}}{3}r_c\right)^2+\left(0\right)^2+\left(\frac{r_c}{3}\right)^2}=\frac{\sqrt{3}}{3}r_c$
+
+$|M_{24}|=\sqrt{\left( -\frac{\sqrt{2}}{6}r_c\right)^2+\left(\frac{\sqrt{6}}{6}r_c\right)^2+\left(\frac{r_c}{3}\right)^2}=\frac{\sqrt{3}}{3}r_c$
+
+$|M_{34}|=\sqrt{\left( -\frac{\sqrt{2}}{6}r_c\right)^2+\left(-\frac{\sqrt{6}}{6}r_c\right)^2+\left(\frac{r_c}{3}\right)^2}=\frac{\sqrt{3}}{3}r_c$
+
+Since all distances are all the same and all dot products are $0$, then we have our first sphere at $(0,0,0)$ with a radius of $\frac{\sqrt{3}}{3}r_c$
+
+Now we will look at the other 4 spheres.
+
+Let $E_{ij}$ be the point of tangent of the larger sphere on the extension of line $V{i}V{j}$ in the direction of $V{i}$ to $V{j}$ and beyond $V{j}$ for $i=1,2,3,4$; $j=1,2,3,4$; and $i \ne j$
+
+Since $|V_j E_{ij}|=|V_j M_{ij}|=\frac{1}{2} |V_j V_i|$, then $\frac{1}{2}(V_j-V_i)=E_{ij}-V_j$, thus $E_{ij}=\frac{3V_j-V_i}{2}$
+
+Using this formula we calculate the following:
+
+$E_{41}=\left( \sqrt{2} r_c ,\;0,\;-r_c \right)$
+
+$E_{42}=\left( -\frac{\sqrt{2}}{2}r_c ,\;\frac{\sqrt{6}}{2}r_c,\;-r_c \right)$
+
+$E_{43}=\left( -\frac{\sqrt{2}}{2}r_c ,\;-\frac{\sqrt{6}}{2}r_c,\;-r_c \right)$
+
+We will start with the sphere below the base of the tetrahedron opposite of vertex $V_{4}$ below $\Delta V{1}V{2}V{3}$
+
+The center of this larger sphere is at $C_1=(0,0,-2r_c)$ and it is tangent at points $M_{12}, M_{13}, M_{23}, E_{41}, E_{42}, E_{43}$
+
+We calculate the following dot products:
+
+$(V_1-V_2) \bullet (M_{12}-C_1)=\left( -\sqrt{2}r_c \right)\left( \frac{\sqrt{2}}{6}r_c \right)+ \left(  \frac{\sqrt{6}}{3}r_c\right)\left( \frac{\sqrt{6}}{6}r_c \right)+ 0=-\frac{1}{3}r_c^2+\frac{1}{3}r_c^2=0$
+
+$(V_1-V_3) \bullet (M_{13}-C_1)=\left( -\sqrt{2}r_c \right)\left( \frac{\sqrt{2}}{6}r_c \right)+ \left(-  \frac{\sqrt{6}}{3}r_c\right)\left( -\frac{\sqrt{6}}{6}r_c \right)+ 0=-\frac{1}{3}r_c^2+\frac{1}{3}r_c^2=0$
+
+$(V_2-V_3) \bullet (M_{23}-C_1)=0+\left(-  \frac{\sqrt{6}}{6}r_c\right)\left( 0\right)+ 0=0$
+
+$(E_{41}-V_4) \bullet (E_{41}-C_1) = \left( \sqrt{2}r_c \right)^2+0+\left( -2r_c \right)\left( -r_c+2r_c \right)=2r_c^2-2r_c^2=0$
+
+$(E_{42}-V_4) \bullet (E_{42}-C_1) = \left( -\frac{\sqrt{2}}{2}r_c \right)^2+\left( \frac{\sqrt{6}}{2}r_c \right)^2+\left( -2r_c \right)\left( -r_c+2r_c \right)=2r_c^2-2r_c^2=0$
+
+$(E_{43}-V_4) \bullet (E_{43}-C_1) = \left( -\frac{\sqrt{2}}{2}r_c \right)^2+\left( -\frac{\sqrt{6}}{2}r_c \right)^2+\left( -2r_c \right)\left( -r_c+2r_c \right)=2r_c^2-2r_c^2=0$
+
+Since all these dot producs equal to $0$ that means that the lines from the center $C_1$ to each of the point $M_{12}, M_{13}, M_{23}, E_{41}, E_{42}, E_{43}$ are all perpendicular.
+
+Now we calculate the distances from $C_1=(0,0,-2r_c)$ to points $M_{12}, M_{13}, M_{23}, E_{41}, E_{42}, E_{43}$
+
+$|C_1M_{12}|=\sqrt{\left( \frac{\sqrt{2}}{6}r_c\right)^2+\left(\frac{\sqrt{6}}{6}r_c\right)^2+\left(-\frac{5}{3}r_c\right)^2}=\sqrt{3}r_c$
+
+$|C_1M_{13}|=\sqrt{\left( \frac{\sqrt{2}}{6}r_c\right)^2+\left(-\frac{\sqrt{6}}{6}r_c\right)^2+\left(-\frac{5}{3}r_c\right)^2}=\sqrt{3}r_c$
+
+$|C_1M_{23}|=\sqrt{\left( -\frac{\sqrt{2}}{3}r_c\right)^2+\left(0\right)^2+\left(-\frac{5}{3}r_c\right)^2}=\sqrt{3}r_c$
+
+$|C_1E_{41}|=\sqrt{\left( \sqrt{2}r_c\right)^2+\left(0\right)^2+\left(-r_c\right)^2}=\sqrt{3}r_c$
+
+$|C_1E_{42}|=\sqrt{\left( -\frac{\sqrt{2}}{2}r_c\right)^2+\left(\frac{\sqrt{6}}{2}r_c\right)^2+\left(-r_c\right)^2}=\sqrt{3}r_c$
+
+$|C_1E_{43}|=\sqrt{\left( -\frac{\sqrt{2}}{2}r_c\right)^2+\left(-\frac{\sqrt{6}}{2}r_c\right)^2+\left(-r_c\right)^2}=\sqrt{3}r_c$
+
+Since all distances are all the same and all dot products are $0$, then we have one of the larger spheres at $(0,0,-2r_c)$ with a radius of $\sqrt{3}r_c$
+
+Then, the other three larger spheres which are the same size as the sphere with center at $C_1$ are congruent and tangent to their respective sides near the other faces of the tetrahedron.
+
+and this proves that a tetrahedron with any circumradius $r_c$ will have these 5 spheres, one with radius $\frac{\sqrt{3}}{3}r_c$, at the center of the tetrahedron and the other 4 with radius $\sqrt{3}r_c$ at centers that are at a distance of $3r_c$ away from any of the vertices of the tetrahedron in the direction from that vertex to the center of its opposite face.
+
+Thus these five spheres exist for any regular tetrahedron."
+1961p4,"In the interior of triangle $P_1P_2P_3$ a point $P$ is given. Let $Q_1,Q_2,Q_3$ be the intersections of $PP_1, PP_2,PP_3$ with the opposing edges of triangle $P_1P_2P_3$. Prove that among the ratios $\frac{PP_1}{PQ_1},\frac{PP_2}{PQ_2},\frac{PP_3}{PQ_3}$ there exists one not larger than $2$ and one not smaller than $2$.
+","Let $K_1=[P_2PP_3], K_2=[P_3PP_1],$ and $K_3=[P_1PP_2].$ Note that by same base in triangles $P_2PP_3$ and $P_2P_1P_3,$ \[\frac{P_1P}{PQ_1}+1=\frac{P_1Q_1}{PQ_1}=\frac{[P_2P_1P_3]}{[P_2PP_3]}=\frac{K_1+K_2+K_3}{K_1}.\] Thus, \[\frac{P_1P}{PQ_1}=\frac{K_2+K_3}{K_1}\]\[\frac{P_2P}{PQ_2}=\frac{K_1+K_3}{K_2}\]\[\frac{P_3P}{PQ_3}=\frac{K_1+K_2}{K_3}.\] Without loss of generality, assume $K_1\leq K_2\leq K_3.$ Hence, \[\frac{P_1P}{PQ_1}=\frac{K_2+K_3}{K_1}\geq \frac{K_1+K_1}{K_1}=2\] and \[\frac{P_3P}{PQ_3}=\frac{K_1+K_2}{K+3}\leq \frac{K_3+K_3}{K_3}=2,\] as desired."
+1960p3,"In a given right triangle $ABC$, the hypotenuse $BC$, of length $a$, is divided into $n$ equal parts ($n$ an odd integer). Let $\alpha$ be the acute angle subtending, from $A$, that segment which contains the midpoint of the hypotenuse. Let $h$ be the length of the altitude to the hypotenuse of the triangle. Prove that:
+
+$\tan{\alpha}=\frac{4nh}{(n^2-1)a}.$","Let $D$ and $E$ be points on $BC$ such that $\alpha=\angle DAE$, $D$ is closer to $B$ than to $C$, and $E$ is closer to $C$ than $B$. Furthermore, let $\alpha_1=\angle BAD$ and $\alpha_2=\angle CAE$, and let $\beta=\angle B$ and $\gamma=\angle C$. Applying Law of Sines on $\triangle BAD$ yields
+
+Similarly, $\tan\alpha_2=\frac{c(n-1)}{b(n+1)}$. Next, we use the sum of tangents formula:
+
+Since $\alpha+\alpha_1+\alpha_2=90^\circ$, we need to find $\tan\alpha=\tan\left(\frac{\pi}{2}-(\alpha_1+\alpha_2)\right)$. This is equal to $\cot(\alpha_1+\alpha_2)$, which is the reciprocal of $\tan(\alpha_1+\alpha_2)$, or $\frac{4nbc}{(b^2+c^2)(n^2-1)}$. Since $bc=ah$ due to triangle areas and $a^2=b^2+c^2$ due to the Pythagorean Theorem, we conclude that the expression is equal to $\frac{4nah}{a^2(n^2-1)}$, which simplifies to $\frac{4nh}{(n^2-1)a}$."
