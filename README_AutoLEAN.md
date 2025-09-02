@@ -4,11 +4,12 @@ AutoLEAN is an intelligent system that automatically generates Lean4 code from m
 
 ## Features
 
-- **Automatic Problem Analysis**: Divides complex mathematical solutions into logical parts
-- **Step-by-Step Code Generation**: Generates Lean4 code for each part incrementally
-- **Error Detection and Correction**: Automatically detects and fixes Lean4 compilation errors
-- **Iterative Refinement**: Continuously improves the generated code based on error messages
-- **Batch Processing**: Can process multiple problems from a CSV file
+- **Section-based Proof Planning (New)**: Uses Gemini to divide each solution into up to 3 sections (lemmas) and writes them to `sections.csv`
+- **Per-Section Code Generation**: Generates Lean4 code section-by-section using the section problem and its natural-language solution
+- **Automatic Import Repair with LeanExplore**: Detects missing Mathlib modules and queries LeanExplore to suggest replacement imports
+- **Iterative Error-Driven Refinement**: Refines Lean code up to 5 times per section using Gemini, preserving the import list
+- **Per-Section Output CSV**: Saves Lean code per section in `lean_sections.csv` with `[fail]` markers when a section fails
+- **Batch Processing**: Processes multiple problems from a CSV file
 - **Kimina Prover Support**: Generate Lean4 code using AI-MO/Kimina-Prover-72B via vLLM
 
 ## Prerequisites
@@ -16,6 +17,7 @@ AutoLEAN is an intelligent system that automatically generates Lean4 code from m
 1. **Python 3.8+** installed on your system
 2. **Lean4** and **Lake** build system installed
 3. **Google Gemini API Key** - Get one from [Google AI Studio](https://makersuite.google.com/app/apikey)
+4. **LeanExplore API Key** (optional but recommended) - Obtain an API key and set `LEANEXPLORE_API_KEY` for automatic import repair
 
 ## Installation
 
@@ -30,6 +32,14 @@ AutoLEAN is an intelligent system that automatically generates Lean4 code from m
    ```
 
    For Kimina Prover with vLLM, ensure a compatible CUDA + GPUs setup. On Windows, vLLM is not officially supported; use WSL/Linux.
+
+3. **Set up LeanExplore API key (optional)**
+   ```bash
+   # Windows
+   set LEANEXPLORE_API_KEY=your_leanexplore_api_key_here
+   # Linux/Mac
+   export LEANEXPLORE_API_KEY=your_leanexplore_api_key_here
+   ```
 
 3. **Set up your Gemini API key** (choose one method):
 
@@ -145,9 +155,19 @@ problem_id,problem,solution
 2023a3,"Let x₁, x₂, ..., x₂₀₂₃ be distinct real positive numbers...","We start with some basic observations..."
 ```
 
-### Output CSV Format
+### Output CSV Formats
 
-The system generates `leanSolutions.csv` containing successfully compiled Lean4 code:
+1) `sections.csv` (new): sections created per problem
+```csv
+problem_id,problem,section_number,Problem for Section 1,Solution1,Problem for Section 2,Solution2,Problem for Section 3,Solution3
+```
+
+2) `lean_sections.csv` (new): Lean code per section
+```csv
+problem_id,section_number,lean_section1,lean_section2,lean_section3
+```
+
+3) `leanSolutions.csv`: combined Lean code when all sections succeed
 
 ```csv
 problem_id,lean_code
@@ -162,40 +182,73 @@ problem_id,lean_code
 
 ## How It Works
 
-### Pipeline Overview
+### Pipeline Overview (New)
 
-1. **Solution Division**: Uses Gemini to break down the mathematical solution into logical parts
-2. **Library Dependency Resolution**: Uses Gemini to identify and validate required Mathlib4 imports
-3. **Incremental Code Generation**: Uses Gemini to generate Lean4 code for each part sequentially
-4. **Error Detection**: Runs the Lean4 code and captures any compilation errors
-5. **Iterative Refinement**: Uses Gemini to fix errors and improve the code
-6. **Final Validation**: Ensures the complete code compiles successfully
+1. **Section Creation**: Gemini divides each problem+solution into at most 3 sections and writes to `sections.csv`.
+2. **Per-Section Code Generation**: For each section, generate Lean4 code using the prompt:
+   - "Now, I have a proof problem: {Problem for section i} ... Now, solve the proof problem with LEAN4 code."
+3. **Run & Import Repair**: Run Lean. If error shows "of module X does not exist", query LeanExplore, replace the missing import with top results.
+4. **Error-Guided Refinement**: Ask Gemini to refine code using the current imports. Up to 5 attempts per section.
+5. **Per-Section Recording**: Save each section's Lean code to `lean_sections.csv`. If failure occurs at a section, prefix that section with `[fail]`, and set subsequent sections to `None`.
+6. **Optional Combine**: If all sections succeed, write combined code to `leanSolutions.csv` for convenience.
 
-### Detailed Process
+### Gemini Prompts Used
 
-#### Step 1: Solution Analysis
-```
-Input: Problem + Solution
-Output: Number of parts + Part descriptions
+1) Section division prompt:
+```text
+You are an expert mathematician and proof strategist. Your task is to analyze a given mathematical proof problem and its correct solution. Your goal is to break down the solution's logic into a sequence of smaller, self-contained "lemmas" or "theorems" that can be proven sequentially.
+
+## Instructions
+
+Analyze Complexity: First, carefully review the [Correct Solution]. Determine if the proof is complex enough to warrant a breakdown. A complex proof might involve multiple distinct steps, a proof by cases, a key construction, or the use of a significant intermediate result.
+
+Decision to Divide:
+
+- If the solution is simple and short (e.g., a direct application of a definition), do not divide it. Present it as a single part.
+
+- If the solution is complex, divide it into at most 3 logical parts. Each part should be a self-contained statement (a lemma) that builds towards the final proof. The proof of a later part may assume the previous parts have been proven.
+
+Formulate Sub-Problems: For each part, clearly state the theorem or lemma that needs to be proven. Frame it as a precise mathematical statement with latex.
+
+Provide Rationale: Briefly explain the strategy behind your division. Describe how proving these smaller parts in sequence logically leads to the final result.
+
+## Input
+
+Problem to Prove:
+{problem}
+
+Correct Solution:
+{solution}
+
+Format your response as:
+PARTS: [number]
+PART 1: [description]
+PART 1 Solution: [description]
+...
 ```
 
-#### Step 2: Library Dependency Resolution
-```
-Input: Solution + Part descriptions + Mathlib4 structure
-Output: Validated import statements
+2) Section code generation prompt:
+```text
+Now, I have a proof problem:
+{Problem for section 1}
+
+I need to solve the proof problem with LEAN4 code.
+For your reference, I have a correct solution with natural language and latex:
+{Answer 1 with latex}
+
+Now, solve the proof problem with LEAN4 code.
 ```
 
-#### Step 3: Part-by-Part Code Generation
-For each part:
-```
-Input: Part description + Previous code + Error messages + Library imports
-Output: Lean4 code for current part (using Gemini with multi-turn conversation)
-```
+3) Error-driven refinement prompt (imports frozen):
+```text
+I refine the libraries importing and delete the libraries that do not exist. When I run the code:
+{current_lean_code}
+I got such error:
+{error_message}
 
-#### Step 4: Code Refinement
-```
-Input: Complete code + Error messages + Library imports
-Output: Refined and corrected Lean4 code (using Gemini with multi-turn conversation)
+Please refine your code according to the error message. Solve the error and provide complete, corrected Lean4 code.
+
+IMPORTANT: You must use ONLY the provided library imports above. Do not add or change any import statements.
 ```
 
 ## Configuration
@@ -223,7 +276,7 @@ Output: Refined and corrected Lean4 code (using Gemini with multi-turn conversat
    - Check environment variable settings
 
 2. **Lean4 Compilation Errors**
-   - The system automatically attempts to fix these
+   - The system automatically attempts to fix these. For missing module errors, LeanExplore is queried to replace imports.
    - Check `all_messages.txt` for detailed error information
 
 3. **Timeout Errors**
@@ -344,99 +397,3 @@ For issues and questions:
 ---
 
 **Note**: AutoLEAN is designed to assist with mathematical proof formalization but may require manual review and refinement for complex proofs. Always verify the generated code before using it in production environments.
-
-## LeanExplore Integration (Missing Import Repair)
-
-When Lean reports a missing module error like:
-
-```
-... of module Mathlib.Analysis.SpecialFunctions.Trigonometric.Sum does not exist
-```
-
-AutoLEAN can query LeanExplore to suggest replacement Mathlib imports and retry compilation.
-
-### Install and Configure
-
-1) Install the Python package (already included in `requirements.txt`):
-
-```bash
-pip install lean-explore>=0.1.3
-```
-
-2) Provide an API key in one of the following ways:
-
-- Environment variable (recommended)
-
-```bash
-# Windows
-set LEANEXPLORE_API_KEY=your_api_key_here
-
-# Linux/Mac
-export LEANEXPLORE_API_KEY=your_api_key_here
-```
-
-- Or via LeanExplore CLI config (if you use their CLI):
-
-```bash
-lean-explore auth login   # follow prompts
-```
-
-AutoLEAN first tries `config_utils.load_api_key()` and falls back to `LEANEXPLORE_API_KEY`.
-
-### How AutoLEAN Uses LeanExplore
-
-On a “module does not exist” error, AutoLEAN:
-
-- Extracts the missing module path from the compiler error
-- Sends a search query to LeanExplore asking for matching Mathlib files
-- Collects the top candidates (up to 20) and converts them to concrete `import Mathlib.…` lines
-- Removes the offending import and inserts the suggested ones, then re-runs Lean
-
-This happens automatically during the section refinement loop.
-
-### Example: Programmatic Use (Async)
-
-```python
-import asyncio
-from lean_explore.api.client import Client
-from lean_explore.cli import config_utils
-
-async def main():
-    api_key = config_utils.load_api_key()  # or read from LEANEXPLORE_API_KEY
-    client = Client(api_key=api_key)
-
-    query = """
-The libraries inside Mathlib.Algebra.BigOperators to provide the `∑ k in S, ...` notation
-Suggest exact Mathlib import paths I can use to replace a missing module.
-"""
-
-    res = await client.search(query=query)
-    print(f"Found {res.count} results")
-    for item in res.results[:20]:
-        src = item.source_file  # e.g. Mathlib/Algebra/BigOperators/Group/Finset/Defs.lean
-        # Convert to an import line:
-        mod = src.replace('/', '.').replace('\\', '.')
-        if mod.endswith('.lean'):
-            mod = mod[:-5]
-        if not mod.startswith('Mathlib.'):
-            mod = f'Mathlib.{mod}'
-        print(f"import {mod}")
-
-asyncio.run(main())
-```
-
-### Crafting Good Queries
-
-- State what is missing and what functionality you need, for example:
-
-```
-Replace the missing module `Mathlib.Analysis.SpecialFunctions.Trigonometric.Sum` with available Mathlib imports
-that provide standard trigonometric lemmas/definitions to compile this code.
-Return exact import lines.
-```
-
-### Notes & Limits
-
-- LeanExplore suggestions are heuristic; keep the validated import set fixed once compilation succeeds
-- If no suitable candidates are found, the section will be marked as failed and recorded in `lean_sections.csv`
-- This flow only triggers for explicit “does not exist” module errors; other errors are handled by Gemini refinement

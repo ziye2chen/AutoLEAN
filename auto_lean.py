@@ -30,6 +30,191 @@ class AutoLEAN:
         self.mathlib_structure = self.load_mathlib_structure()
         self._init_error_log()
 
+    # ===================== Sections CSV helpers =====================
+    def write_sections_csv(self, problem_row: Dict[str, str], parts: List[Dict[str, str]], out_path: str = "sections.csv") -> None:
+        """Append sections info for a problem to sections.csv with specified columns."""
+        header = [
+            "problem_id", "problem", "section_number",
+            "Problem for Section 1", "Solution1",
+            "Problem for Section 2", "Solution2",
+            "Problem for Section 3", "Solution3",
+        ]
+        row = {
+            "problem_id": problem_row.get("id", ""),
+            "problem": problem_row.get("problem", ""),
+            "section_number": str(len(parts)),
+            "Problem for Section 1": parts[0]["problem"] if len(parts) >= 1 else "None",
+            "Solution1": parts[0]["solution"] if len(parts) >= 1 else "None",
+            "Problem for Section 2": parts[1]["problem"] if len(parts) >= 2 else "None",
+            "Solution2": parts[1]["solution"] if len(parts) >= 2 else "None",
+            "Problem for Section 3": parts[2]["problem"] if len(parts) >= 3 else "None",
+            "Solution3": parts[2]["solution"] if len(parts) >= 3 else "None",
+        }
+        file_exists = os.path.exists(out_path)
+        with open(out_path, mode='a', encoding='utf-8', newline='') as f:
+            w = csv.DictWriter(f, fieldnames=header)
+            if not file_exists:
+                w.writeheader()
+            w.writerow(row)
+
+    def parse_sections_from_response(self, response: str) -> List[Dict[str, str]]:
+        """Parse the PARTS/PART i and PART i Solution blocks into list of dicts."""
+        lines = [l.strip() for l in response.splitlines()]
+        parts: List[Dict[str, str]] = []
+        cur: Dict[str, str] = {}
+        expecting = None
+        for ln in lines:
+            if ln.upper().startswith("PART ") and ":" in ln and "Solution" not in ln:
+                if cur:
+                    parts.append(cur)
+                cur = {"problem": ln.split(":", 1)[1].strip(), "solution": ""}
+                expecting = "problem"
+            elif ("Solution:" in ln) and ":" in ln:
+                if not cur:
+                    cur = {"problem": "", "solution": ""}
+                cur["solution"] = ln.split(":", 1)[1].strip()
+                expecting = "solution"
+            else:
+                if cur and expecting == "solution" and ln:
+                    cur["solution"] += ("\n" + ln if cur["solution"] else ln)
+                elif cur and expecting == "problem" and ln and not ln.upper().startswith("PARTS:"):
+                    cur["problem"] += ("\n" + ln if cur["problem"] else ln)
+        if cur:
+            parts.append(cur)
+        # Trim to at most 3 as required
+        return parts[:3] if parts else []
+
+    def divide_solution_into_sections(self, problem_id: str, problem: str, solution: str) -> List[Dict[str, str]]:
+        """Use Gemini to divide solution into up to 3 sections and return structured parts."""
+        prompt = (
+            "You are an expert mathematician and proof strategist. Your task is to analyze a given mathematical proof problem and its correct solution. Your goal is to break down the solution's logic into a sequence of smaller, self-contained \"lemmas\" or \"theorems\" that can be proven sequentially.\n\n"
+            "## Instructions\n\n"
+            "Analyze Complexity: First, carefully review the [Correct Solution]. Determine if the proof is complex enough to warrant a breakdown. A complex proof might involve multiple distinct steps, a proof by cases, a key construction, or the use of a significant intermediate result.\n\n"
+            "Decision to Divide:\n\n- If the solution is simple and short (e.g., a direct application of a definition), do not divide it. Present it as a single part.\n\n- If the solution is complex, divide it into at most 3 logical parts. Each part should be a self-contained statement (a lemma) that builds towards the final proof. The proof of a later part may assume the previous parts have been proven.\n\n"
+            "Formulate Sub-Problems: For each part, clearly state the theorem or lemma that needs to be proven. Frame it as a precise mathematical statement with latex.\n\n"
+            "Provide Rationale: Briefly explain the strategy behind your division. Describe how proving these smaller parts in sequence logically leads to the final result.\n\n"
+            "## Input\n\n"
+            f"Problem to Prove:\n{problem}\n\n"
+            f"Correct Solution:\n{solution}\n\n"
+            "Format your response as:\nPARTS: [number]\nPART 1: [description]\nPART 1 Solution: [description]\nPART 2: [description]\nPART 2 Solution: [description]\nPART 3: [description]\nPART 3 Solution: [description]\n"
+        )
+        # fresh chat for this call has already been created per problem
+        resp = self.call_gemini(prompt)
+        parts = self.parse_sections_from_response(resp)
+        if not parts:
+            parts = [{"problem": problem, "solution": solution}]
+        self.write_sections_csv({"id": problem_id, "problem": problem}, parts)
+        return parts
+
+    # ===================== Section code pipeline =====================
+    def generate_section_code_prompt(self, section_problem: str, section_solution: str) -> str:
+        return f"""Now, I have a proof problem:
+{section_problem}
+
+I need to solve the proof problem with LEAN4 code.
+For your reference, I have a correct solution with natural language and latex:
+{section_solution}
+
+Now, solve the proof problem with LEAN4 code.
+"""
+
+    def generate_section_lean_code(self, section_problem: str, section_solution: str) -> str:
+        """Use Gemini to generate Lean4 code for a given section (problem + solution)."""
+        prompt = self.generate_section_code_prompt(section_problem, section_solution)
+        response = self.call_gemini(prompt)
+        return self._extract_and_clean_lean_code(response)
+
+    # ===================== LeanExplore integration for missing imports =====================
+    def extract_missing_module(self, error_output: str) -> str:
+        """Extract missing module path from Lean error text."""
+        marker = " of module "
+        if marker in error_output and " does not exist" in error_output:
+            start = error_output.find(marker) + len(marker)
+            end = error_output.find(" does not exist", start)
+            return error_output[start:end].strip()
+        return ""
+
+    def fix_missing_imports_with_lean_explore(self, code: str, missing_module: str) -> str:
+        """Use lean-explore to suggest replacement imports for a missing module path and update code."""
+        try:
+            import asyncio
+            from lean_explore.api.client import Client
+            from lean_explore.cli import config_utils
+        except Exception:
+            return code
+        try:
+            api_key = config_utils.load_api_key()
+        except Exception:
+            api_key = os.getenv("LEANEXPLORE_API_KEY")
+        try:
+            async def _do_search(q: str):
+                client = Client(api_key=api_key)
+                return await client.search(query=q)
+            query = (
+                "Suggest exact Mathlib import paths that replace missing module '" + missing_module +
+                "' and cover equivalent functionality. Return files as Mathlib.X.Y paths."
+            )
+            res = asyncio.get_event_loop().run_until_complete(_do_search(query))
+            results = getattr(res, 'results', []) or []
+            # Build candidate import lines from top 20 results
+            candidates: List[str] = []
+            for item in results[:20]:
+                try:
+                    src = item.source_file.replace("/", ".").replace("\\", ".")
+                    if src.endswith(".lean"):
+                        src = src[:-5]
+                    if not src.startswith("Mathlib."):
+                        src = f"Mathlib.{src}"
+                    imp = f"import {src}"
+                    if imp not in candidates:
+                        candidates.append(imp)
+                except Exception:
+                    continue
+            if not candidates:
+                return code
+            # Remove the missing import line and insert candidates
+            lines = code.splitlines()
+            new_lines: List[str] = []
+            removed = False
+            for ln in lines:
+                if not removed and ln.strip().startswith("import ") and missing_module in ln:
+                    removed = True
+                    continue
+                new_lines.append(ln)
+            insert_idx = 0
+            while insert_idx < len(new_lines) and new_lines[insert_idx].strip().startswith("import "):
+                insert_idx += 1
+            updated = new_lines[:insert_idx] + candidates + new_lines[insert_idx:]
+            return "\n".join(updated)
+        except Exception:
+            return code
+
+    # ===================== Section results CSV =====================
+    def write_lean_sections_csv(self, problem_id: str, section_count: int, section_codes: List[str], failed_idx: int | None, out_path: str = "lean_sections.csv") -> None:
+        """Write per-problem lean sections CSV row, with [fail] prefix on failed section and None for unreached sections."""
+        header = [
+            "problem_id", "section_number", "lean_section1", "lean_section2", "lean_section3"
+        ]
+        codes = [None, None, None]
+        for i in range(min(3, len(section_codes))):
+            codes[i] = section_codes[i]
+        # Prefix failed section with [fail]
+        if failed_idx is not None and 1 <= failed_idx <= 3 and codes[failed_idx-1] is not None:
+            codes[failed_idx-1] = f"[fail]\n{codes[failed_idx-1]}"
+        row = {
+            "problem_id": problem_id,
+            "section_number": str(section_count),
+            "lean_section1": codes[0] if codes[0] is not None else "None",
+            "lean_section2": codes[1] if codes[1] is not None else "None",
+            "lean_section3": codes[2] if codes[2] is not None else "None",
+        }
+        file_exists = os.path.exists(out_path)
+        with open(out_path, mode='a', encoding='utf-8', newline='') as f:
+            w = csv.DictWriter(f, fieldnames=header)
+            if not file_exists:
+                w.writeheader()
+            w.writerow(row)
+
     def _init_error_log(self):
         """Initialize the error log file with a header."""
         try:
@@ -65,116 +250,6 @@ class AutoLEAN:
                     'solution': row['solution']
                 })
         return problems
-
-    # ===================== Sectioning helpers and CSV writers =====================
-    def write_sections_csv(
-        self,
-        problem_row: Dict[str, str],
-        parts: List[Dict[str, str]],
-        out_path: str = "sections.csv",
-    ) -> None:
-        """Append sections info for a problem to sections.csv with specified columns."""
-        header = [
-            "problem_id", "problem", "section_number",
-            "Problem for Section 1", "Solution1",
-            "Problem for Section 2", "Solution2",
-            "Problem for Section 3", "Solution3",
-        ]
-        row = {
-            "problem_id": problem_row.get("id", ""),
-            "problem": problem_row.get("problem", ""),
-            "section_number": str(len(parts)),
-            "Problem for Section 1": parts[0]["problem"] if len(parts) >= 1 else "None",
-            "Solution1": parts[0]["solution"] if len(parts) >= 1 else "None",
-            "Problem for Section 2": parts[1]["problem"] if len(parts) >= 2 else "None",
-            "Solution2": parts[1]["solution"] if len(parts) >= 2 else "None",
-            "Problem for Section 3": parts[2]["problem"] if len(parts) >= 3 else "None",
-            "Solution3": parts[2]["solution"] if len(parts) >= 3 else "None",
-        }
-        file_exists = os.path.exists(out_path)
-        with open(out_path, mode='a', encoding='utf-8', newline='') as f:
-            w = csv.DictWriter(f, fieldnames=header)
-            if not file_exists:
-                w.writeheader()
-            w.writerow(row)
-
-    def write_lean_sections_csv(
-        self,
-        problem_id: str,
-        section_codes: List[str],
-        out_path: str = "lean_sections.csv",
-    ) -> None:
-        """Write/append a row containing Lean code per section with fail/None semantics."""
-        header = [
-            "problem_id", "section_number", "lean_section1", "lean_section2", "lean_section3"
-        ]
-        # Normalize to exactly 3 entries, pad with "None"
-        normalized = list(section_codes[:3])
-        while len(normalized) < 3:
-            normalized.append("None")
-        section_number = str(len([c for c in normalized if c and c != "None"]))
-        row = {
-            "problem_id": problem_id,
-            "section_number": section_number,
-            "lean_section1": normalized[0],
-            "lean_section2": normalized[1],
-            "lean_section3": normalized[2],
-        }
-        file_exists = os.path.exists(out_path)
-        with open(out_path, mode='a', encoding='utf-8', newline='') as f:
-            w = csv.DictWriter(f, fieldnames=header)
-            if not file_exists:
-                w.writeheader()
-            w.writerow(row)
-
-    def parse_sections_from_response(self, response: str) -> List[Dict[str, str]]:
-        """Parse the PARTS and PART i/ PART i Solution blocks into list of dicts."""
-        lines = [l.strip() for l in response.splitlines()]
-        parts: List[Dict[str, str]] = []
-        current: Dict[str, str] = {}
-        expecting: str | None = None
-        for ln in lines:
-            if ln.upper().startswith("PART ") and ":" in ln and "Solution" not in ln:
-                if current:
-                    parts.append(current)
-                current = {"problem": ln.split(":", 1)[1].strip(), "solution": ""}
-                expecting = "problem"
-            elif ("Solution:" in ln) and ":" in ln:
-                if not current:
-                    current = {"problem": "", "solution": ""}
-                current["solution"] = ln.split(":", 1)[1].strip()
-                expecting = "solution"
-            else:
-                if current and expecting == "solution" and ln:
-                    current["solution"] += ("\n" + ln if current["solution"] else ln)
-                elif current and expecting == "problem" and ln and not ln.upper().startswith("PARTS:"):
-                    current["problem"] += ("\n" + ln if current["problem"] else ln)
-        if current:
-            parts.append(current)
-        # Trim to at most 3 as required
-        return parts[:3] if parts else []
-
-    def divide_solution_into_sections(self, problem_id: str, problem: str, solution: str) -> List[Dict[str, str]]:
-        """Use Gemini to divide solution into up to 3 sections and return structured parts; also write sections.csv."""
-        prompt = (
-            "You are an expert mathematician and proof strategist. Your task is to analyze a given mathematical proof problem and its correct solution. Your goal is to break down the solution's logic into a sequence of smaller, self-contained \"lemmas\" or \"theorems\" that can be proven sequentially.\n\n"
-            "## Instructions\n\n"
-            "Analyze Complexity: First, carefully review the [Correct Solution]. Determine if the proof is complex enough to warrant a breakdown. A complex proof might involve multiple distinct steps, a proof by cases, a key construction, or the use of a significant intermediate result.\n\n"
-            "Decision to Divide:\n\n- If the solution is simple and short (e.g., a direct application of a definition), do not divide it. Present it as a single part.\n\n- If the solution is complex, divide it into at most 3 logical parts. Each part should be a self-contained statement (a lemma) that builds towards the final proof. The proof of a later part may assume the previous parts have been proven.\n\n"
-            "Formulate Sub-Problems: For each part, clearly state the theorem or lemma that needs to be proven. Frame it as a precise mathematical statement with latex.\n\n"
-            "Provide Rationale: Briefly explain the strategy behind your division. Describe how proving these smaller parts in sequence logically leads to the final result.\n\n"
-            "## Input\n\n"
-            f"Problem to Prove:\n{problem}\n\n"
-            f"Correct Solution:\n{solution}\n\n"
-            "Format your response as:\nPARTS: [number]\nPART 1: [description]\nPART 1 Solution: [description]\nPART 2: [description]\nPART 2 Solution: [description]\nPART 3: [description]\nPART 3 Solution: [description]\n"
-        )
-        # Use chat context for this problem
-        resp = self.call_gemini(prompt)
-        parts = self.parse_sections_from_response(resp)
-        if not parts:
-            parts = [{"problem": problem, "solution": solution}]
-        self.write_sections_csv({"id": problem_id, "problem": problem}, parts)
-        return parts
 
     def create_new_chat(self):
         """Create a new chat session for a new problem."""
@@ -587,7 +662,7 @@ IMPORTANT: You must use ONLY the provided library imports above. Do not add or c
         return extracted_code
 
     def process_problem(self, problem_data: Dict[str, str]) -> bool:
-        """Process a single problem through the complete pipeline."""
+        """Process a single problem using the new section-based pipeline."""
         print(f"\n{'='*60}")
         print(f"PROCESSING PROBLEM: {problem_data['id']}")
         print(f"{'='*60}")
@@ -598,144 +673,123 @@ IMPORTANT: You must use ONLY the provided library imports above. Do not add or c
         problem = problem_data['problem']
         solution = problem_data['solution']
 
-        # Step 1: Divide solution into parts
-        num_parts, part_descriptions = self.divide_solution_into_parts(problem, solution)
-        if not part_descriptions:
-            print("❌ Failed to divide solution into parts. Skipping this problem.")
+        # Step 1: Divide into sections using the new prompt and write to sections.csv
+        parts = self.divide_solution_into_sections(problem_data['id'], problem, solution)
+        if not parts:
+            print("❌ Failed to divide into sections. Skipping this problem.")
             return False
-        print(f"Solution divided into {num_parts} parts")
 
-        # Step 2: Resolve library dependencies
-        print("\n--- Resolving Library Dependencies ---")
-        library_imports = self.resolve_library_dependencies(solution, num_parts, part_descriptions)
+        print(f"Section count: {len(parts)}")
 
-        # Validate and refine library imports
-        max_import_retries = 5
-        import_retry_count = 0
+        # Step 2: For each section, generate Lean code, run, and refine up to 5 times
+        section_codes: List[str] = []
+        failed_idx: int | None = None
 
-        while import_retry_count < max_import_retries:
-            is_valid, error_message = self.validate_library_imports(library_imports)
+        for idx, part in enumerate(parts, start=1):
+            print(f"\n--- Processing Section {idx}/{len(parts)} ---")
+            section_problem = part.get("problem", "")
+            section_solution = part.get("solution", "")
 
-            if is_valid:
-                print("✅ Library imports validated successfully!")
+            # Initial generation
+            current_code = self.generate_section_lean_code(section_problem, section_solution)
+            if not current_code:
+                print("❌ Empty code generated for this section.")
+                failed_idx = idx
+                section_codes.append("")
                 break
-            else:
-                print(f"❌ Library import validation failed: {error_message}")
-                if import_retry_count < max_import_retries - 1:
-                    print("Refining library imports...")
-                    library_imports = self.refine_library_imports(
-                        solution, num_parts, part_descriptions, library_imports, error_message
-                    )
-                    import_retry_count += 1
+
+            # Save and run
+            self.save_lean_code(current_code)
+            output = self.run_lean_code()
+
+            # Up to 5 refinement attempts per section
+            max_attempts = 5
+            attempts = 0
+            while attempts < max_attempts and (output and "error" in output.lower()):
+                attempts += 1
+                print(f"Refinement attempt {attempts}/{max_attempts} for Section {idx}")
+
+                # Step 3: If missing module error, fix imports using LeanExplore
+                missing_module = self.extract_missing_module(output)
+                if missing_module:
+                    print(f"Detected missing module: {missing_module}. Trying LeanExplore suggestions...")
+                    updated = self.fix_missing_imports_with_lean_explore(current_code, missing_module)
+                    if updated != current_code:
+                        current_code = updated
+                        self.save_lean_code(current_code)
+                        output = self.run_lean_code()
+                        continue
+
+                # Step 4: Use Gemini to refine code, but do not change imports
+                # Extract current imports from code
+                import_lines = []
+                for ln in current_code.splitlines():
+                    if ln.strip().startswith("import "):
+                        import_lines.append(ln.strip())
+                    else:
+                        # stop at first non-import once imports are gathered
+                        if import_lines:
+                            break
+                library_imports = "\n".join(import_lines)
+
+                prompt = (
+                    "I refine the libraries importing and delete the libraries that do not exist. When I run the code:\n"
+                    f"{current_code}\n"
+                    "I got such error:\n"
+                    f"{output}\n\n"
+                    "Please refine your code according to the error message. Solve the error and provide complete, corrected Lean4 code.\n\n"
+                    "IMPORTANT: You must use ONLY the provided library imports above. Do not add or change any import statements."
+                )
+                refined = self.call_gemini(prompt)
+                refined_code = self._extract_and_clean_lean_code(refined)
+                if refined_code and refined_code != current_code:
+                    # Ensure imports are unchanged
+                    refined_imports = []
+                    for ln in refined_code.splitlines():
+                        if ln.strip().startswith("import "):
+                            refined_imports.append(ln.strip())
+                        else:
+                            if refined_imports:
+                                break
+                    if "\n".join(refined_imports) != library_imports:
+                        # Restore original imports
+                        rest = refined_code.split("\n")
+                        # Remove refined import block
+                        i = 0
+                        while i < len(rest) and rest[i].strip().startswith("import "):
+                            i += 1
+                        refined_code = library_imports + "\n" + "\n".join(rest[i:])
+
+                    current_code = refined_code
+                    self.save_lean_code(current_code)
+                    output = self.run_lean_code()
                 else:
-                    print("⚠️  Max library import retries reached. Using current imports.")
+                    # No useful refinement; stop early
                     break
 
-        # Step 3: Generate code for each part
-        current_code = ""
-        for part_num in range(1, num_parts + 1):
-            print(f"\n--- Processing Part {part_num}/{num_parts} ---")
-
-            # Keep trying to generate code for this part until successful or max retries reached
-            max_part_retries = 3
-            part_success = False
-
-            for part_attempt in range(max_part_retries):
-                if part_attempt > 0:
-                    print(f"Retrying Part {part_num} (attempt {part_attempt + 1}/{max_part_retries})...")
-
-                # Generate code for this part
-                new_code = self.generate_lean_code_for_part(
-                    solution, num_parts, part_descriptions, part_num,
-                    current_code, "", library_imports
-                )
-
-                # Check if we got valid code from Gemini
-                if new_code and new_code.strip():
-                    # Combine with previous code
-                    if current_code:
-                        current_code = new_code  # The new code should already include previous parts
-                    else:
-                        current_code = new_code
-
-                    # Save and run the code
-                    self.save_lean_code(current_code)
-                    print(f"Running Lean4 code for Part {part_num}...")
-                    error_message = self.run_lean_code()
-
-                    if error_message and "error" in error_message.lower():
-                        print(f"Error in Part {part_num}: {error_message}")
-
-                        # If this is not the last part, continue to next part
-                        if part_num < num_parts:
-                            part_success = True  # Mark as successful even with errors for non-final parts
-                            break
-                        else:
-                            # For the last part, try to refine the complete code
-                            print("Attempting to refine the complete code...")
-                            refined_code = self.refine_complete_code(solution, current_code, error_message, library_imports)
-                            if refined_code and refined_code != current_code:
-                                current_code = refined_code
-                                self.save_lean_code(current_code)
-                                error_message = self.run_lean_code()
-                                part_success = True
-                                break
-                            else:
-                                print("Refinement failed or no changes made.")
-                                if part_attempt < max_part_retries - 1:
-                                    continue  # Try again
-                                else:
-                                    print(f"Failed to generate valid code for Part {part_num} after {max_part_retries} attempts.")
-                                    break
-                    else:
-                        print(f"Part {part_num} completed successfully!")
-                        part_success = True
-                        break
-                else:
-                    print(f"Gemini API returned empty code for Part {part_num}")
-                    if part_attempt < max_part_retries - 1:
-                        print("Retrying...")
-                        time.sleep(2)
-                        continue
-                    else:
-                        print(f"Failed to get valid code for Part {part_num} after {max_part_retries} attempts.")
-                        break
-
-            if not part_success:
-                print(f"❌ Failed to process Part {part_num}. Stopping processing for this problem.")
-                return False
-
-        # Step 3: Final refinement loop
-        refinement_count = 0
-
-        while refinement_count < self.max_refinement_loops:
-            error_message = self.run_lean_code()
-
-            if not error_message or "error" not in error_message.lower():
-                print("✅ Lean4 code generated successfully!")
-                # Save to leanSolutions.csv
-                try:
-                    self.save_lean_solution_csv(problem_data['id'], current_code)
-                except Exception as e:
-                    print(f"⚠️  Failed to save to leanSolutions.csv: {e}")
-                return True
-
-            print(f"\n--- Refinement Round {refinement_count + 1} ---")
-            print(f"Error: {error_message}")
-
-            refined_code = self.refine_complete_code(solution, current_code, error_message, library_imports)
-            if not refined_code or refined_code == current_code:
-                print("No changes made in refinement, stopping.")
+            # After attempts, check success
+            if output and "error" in output.lower():
+                print(f"❌ Section {idx} failed after {max_attempts} attempts.")
+                failed_idx = idx
+                section_codes.append(current_code)
                 break
+            else:
+                print(f"✅ Section {idx} succeeded.")
+                section_codes.append(current_code)
+                # proceed to next section
 
-            current_code = refined_code
-            self.save_lean_code(current_code)
-            refinement_count += 1
+        # Write per-problem lean sections CSV row
+        self.write_lean_sections_csv(problem_data['id'], len(parts), section_codes, failed_idx)
 
-        if refinement_count >= self.max_refinement_loops:
-            print(f"⚠️  Maximum refinements ({self.max_refinement_loops}) reached. Code may still have issues.")
+        # If all sections succeeded, also save to leanSolutions.csv as combined code
+        if failed_idx is None:
+            try:
+                combined_code = "\n\n/-- Combined sections below --/\n\n" + "\n\n".join(section_codes)
+                self.save_lean_solution_csv(problem_data['id'], combined_code)
+            except Exception as e:
+                print(f"⚠️  Failed to save combined solution: {e}")
 
-        return True
+        return failed_idx is None
 
     def set_max_refinement_loops(self, max_loops: int) -> None:
         """Set the maximum number of refinement loops for complete code."""
